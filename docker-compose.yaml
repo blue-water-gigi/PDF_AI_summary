@@ -1,0 +1,58 @@
+services:
+
+  nginx:
+    image: nginx:1.30-alpine
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./main_app:/app
+    container_name: app_nginx
+    ports:
+      - "8000:80"
+    networks:
+      - app_network
+    depends_on:
+      - php
+
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: dev.Dockerfile
+    container_name: app_php
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./main_app:/app
+      - ./docker/php/dev.php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+    user: "1000:1000"
+    networks:
+      - app_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    container_name: app_postgres
+    environment:
+      POSTGRES_DB: pdf_summ
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d pdf_summ" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

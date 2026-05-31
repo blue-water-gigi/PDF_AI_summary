@@ -1,0 +1,90 @@
+# Root .gitignore for monorepo: Docker + Laravel app (main_app) + tooling
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Editor/IDE ---
+.idea/
+.vscode/
+/.phpstorm.meta.php
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+.pnp/
+.pnp.js
+
+# --- PHP / Composer ---
+**/vendor/
+/.phpunit.result.cache
+.phpunit.result.cache
+
+# Composer specific cache / lock artefacts sometimes
+# (keep composer.lock in git for applications; do not ignore it globally)
+
+# --- Laravel specific ---
+# Ignore environment files (but keep example files with explicit negation below)
+.env
+.env.local
+.env.*.local
+.env.testing
+.env.backup
+!.env.example
+
+# Laravel generated / runtime files
+/public/hot
+/public/storage
+/storage/*.key
+storage/debugbar
+
+# Application caches and compiled files
+bootstrap/cache/*
+main_app/bootstrap/cache/*
+
+# Logs
+*.log
+logs/
+storage/logs/
+
+# Storage and framework runtime directories (main_app includes its own .gitignore files,
+# these entries are defensive for other services in repo)
+main_app/storage/
+main_app/vendor/
+
+# --- Docker / containers / build ---
+# Ignore docker-compose override files and envs that contain secrets
+docker-compose.override.yml
+docker-compose.*.yml
+/.env.docker
+docker/*.env
+docker/**/.env
+docker-compose.local.yml
+
+# Ignore built images and temporary build artifacts
+**/build/
+**/tmp/
+
+# --- CI / tooling ---
+.env.test
+.php_cs.cache
+.php_cs.cache.php
+/.cache
+
+# --- Tests ---
+/coverage/
+phpunit.xml
+
+# --- Misc ---
+/.vagrant/
+.homestead.yml
+.homestead.local
+
+# Ensure node in subfolders is ignored
+**/node_modules/
+
+# --- AI ---
+/.ai
