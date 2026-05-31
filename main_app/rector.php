@@ -12,23 +12,23 @@ use RectorLaravel\Set\LaravelSetProvider;
 
 return RectorConfig::configure()
     ->withPaths([
-        __DIR__ . '/app',
-        __DIR__ . '/bootstrap',
-        __DIR__ . '/config',
-        __DIR__ . '/public',
-        __DIR__ . '/resources',
-        __DIR__ . '/routes',
-        __DIR__ . '/tests',
+        __DIR__.'/app',
+        __DIR__.'/bootstrap',
+        __DIR__.'/config',
+        __DIR__.'/public',
+        __DIR__.'/resources',
+        __DIR__.'/routes',
+        __DIR__.'/tests',
     ])
     ->withSkip([
-        __DIR__ . '/bootstrap/cache',
-        __DIR__ . '/storage',
-        __DIR__ . '/vendor',
+        __DIR__.'/bootstrap/cache',
+        __DIR__.'/storage',
+        __DIR__.'/vendor',
         AddClosureVoidReturnTypeWhereNoReturnRector::class,
         ReturnTypeFromStrictTypedCallRector::class,
         ReturnUnionTypeRector::class,
         DeclareStrictTypesRector::class => [
-            __DIR__ . '/resources/views',
+            __DIR__.'/resources/views',
         ],
         AddArrowFunctionReturnTypeRector::class,
     ])

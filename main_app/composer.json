@@ -52,7 +52,7 @@
         ],
         "format": [
             "./vendor/bin/rector",
-            "./vendor/bin/pest"
+            "./vendor/bin/pint"
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",

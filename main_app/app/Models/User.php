@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Override;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Override;
 
 class User extends Authenticatable
 {
@@ -62,11 +62,12 @@ class User extends Authenticatable
         ];
     }
 
+    #[Override]
     protected static function booted(): void
     {
         static::creating(function ($user) {
-            if (!$user->plan_id) {
-                $basicPlan = once(fn() => Plan::where('slug', 'basic')->first());
+            if (! $user->plan_id) {
+                $basicPlan = once(fn () => Plan::where('slug', 'basic')->first());
                 if ($basicPlan) {
                     $user->plan_id = $basicPlan->id;
                     $user->pdf_count = 0;
@@ -88,7 +89,7 @@ class User extends Authenticatable
 
     public function canSummarizePdf(): bool
     {
-        if (!$this->plan_id) {
+        if (! $this->plan_id) {
             return false;
         }
 
@@ -101,16 +102,12 @@ class User extends Authenticatable
             $this->refresh();
         }
 
-        //unlimited usage = negative value on pdf_limit
+        // unlimited usage = negative value on pdf_limit
         if ($this->plan->pdf_limit < 0) {
             return true;
         }
 
-        if ($this->pdf_count > $this->plan->pdf_limit) {
-            return false;
-        }
-
-        return true;
+        return $this->pdf_count <= $this->plan->pdf_limit;
     }
 
     public function isAdmin(): bool
@@ -120,15 +117,11 @@ class User extends Authenticatable
 
     public function hasActiveSub(): bool
     {
-        if (!$this->stripe_sub_id) {
+        if (! $this->stripe_sub_id) {
             return false;
         }
 
-        if ($this->stripe_sub_ends_at && $this->stripe_sub_ends_at->isPast()) {
-            return false;
-        }
-
-        return true;
+        return ! ($this->stripe_sub_ends_at && $this->stripe_sub_ends_at->isPast());
     }
 
     public function canChangePlan(): bool

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +17,7 @@ class PdfSummary extends Model
         'user_id',
         'filename',
         'summary',
-        'filesize'
+        'filesize',
     ];
 
     public function user(): BelongsTo

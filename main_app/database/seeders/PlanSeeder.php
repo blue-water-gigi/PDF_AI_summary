@@ -3,13 +3,13 @@
 namespace Database\Seeders;
 
 use App\Models\Plan;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PlanSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
      * @throws \JsonException
      */
     public function run(): void
@@ -24,7 +24,7 @@ class PlanSeeder extends Seeder
                 '10 PDFs per month',
                 'Standard summaries',
                 'Email support',
-                'Basic export options'
+                'Basic export options',
             ], JSON_THROW_ON_ERROR),
             'is_active' => true,
         ]);
@@ -40,7 +40,7 @@ class PlanSeeder extends Seeder
                 'All summaries types',
                 'Priority support',
                 'Many export options',
-                'Advanced analytics'
+                'Advanced analytics',
             ], JSON_THROW_ON_ERROR),
             'is_active' => true,
         ]);
@@ -56,7 +56,7 @@ class PlanSeeder extends Seeder
                 'All summaries types',
                 'API access support',
                 'Many export options',
-                'Custom integration'
+                'Custom integration',
             ], JSON_THROW_ON_ERROR),
             'is_active' => true,
         ]);
