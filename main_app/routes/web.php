@@ -25,12 +25,12 @@ Route::get('/', function () {
             ->where('is_active', true)
             ->orderBy('price')
             ->get()
-            ->map(fn (Plan $plan): array => [
+            ->map(fn(Plan $plan): array => [
                 'id' => $plan->id,
                 'name' => $plan->name,
                 'slug' => $plan->slug,
                 'description' => $plan->description,
-                'price' => (float) $plan->price,
+                'price' => (float)$plan->price,
                 'pdf_limit' => $plan->pdf_limit,
                 'features' => is_array($plan->features) ? $plan->features : [],
             ])
@@ -45,8 +45,17 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', fn () => Inertia::render('dashboard'))->name('dashboard');
+    Route::get('dashboard', fn() => Inertia::render('dashboard'))->name('dashboard');
 });
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+Route::get('/checkout/{slug}', function (string $slug) {
+    $plan = Plan::query()->where('slug', $slug)->firstOrFail();
+
+    return Inertia::render('checkout', [
+        'plan' => $plan,
+        'stripeKey' => config('services.stripe.key'),
+    ]);
+})->name('checkout');
+
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';

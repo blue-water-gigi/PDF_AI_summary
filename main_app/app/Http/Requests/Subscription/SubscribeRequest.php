@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Subscription;
 
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -12,7 +14,7 @@ class SubscribeRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +25,7 @@ class SubscribeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'stripeToken' => ['required', 'string']
+            'stripeToken' => ['required', 'string'],
         ];
     }
 }

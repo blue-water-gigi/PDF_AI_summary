@@ -5,8 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -25,7 +24,7 @@ return new class extends Migration
             $table->timestamp('pdf_count_resets_at')->nullable();
             $table->string('stripe_customer_id')->nullable()->default(null); // todo replace with foreignId later?
             $table->string('stripe_sub_id')->nullable()->default(null); // todo replace with foreignId later?
-            $table->timestamp('stripe_sub_ends_at')->nullable()->default(null);
+            $table->timestamp('sub_ends_at')->nullable()->default(null);
             $table->timestamps();
         });
 

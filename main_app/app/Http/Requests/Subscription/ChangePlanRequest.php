@@ -6,15 +6,16 @@ namespace App\Http\Requests\Subscription;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class CreatePaymentIntentRequest extends FormRequest
+class ChangePlanRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -25,8 +26,7 @@ class CreatePaymentIntentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount' => ['required', 'numeric', 'min:0'],
-            'plan_slug' => ['required', 'string'],
+            'plan_slug' => ['required', 'string', Rule::exists('plans', 'slug')],
         ];
     }
 }

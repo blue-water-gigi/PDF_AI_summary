@@ -115,6 +115,9 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /**
+     * Check if user have stripe subscription
+     */
     public function hasActiveSub(): bool
     {
         if (! $this->stripe_sub_id) {
@@ -122,10 +125,5 @@ class User extends Authenticatable
         }
 
         return ! ($this->stripe_sub_ends_at && $this->stripe_sub_ends_at->isPast());
-    }
-
-    public function canChangePlan(): bool
-    {
-        return $this->hasActiveSub();
     }
 }
