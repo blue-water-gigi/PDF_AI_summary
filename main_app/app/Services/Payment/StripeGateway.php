@@ -29,24 +29,27 @@ readonly class StripeGateway implements PaymentGatewayInterface
     {
     }
 
+
     /**
-     * Create Price object for subscription
+     * Create or retrieve price id for subscription.
      *
+     * @param Plan $plan
+     * @return string
      * @throws PlanPriceException
      */
-    private function createPlanPrice(
-        Plan   $plan,
-        string $currency = 'usd',
-        string $interval = 'month',
-        int    $intervalCount = 1): Price
+    private function createOrRetrievePlanPrice(Plan $plan): string
     {
         try {
-            return $this->stripeClient->prices->create([
-                'currency' => $currency,
+            if ($plan->stripe_price_id) {
+                return $plan->stripe_price_id;
+            }
+
+            $price = $this->stripeClient->prices->create([
+                'currency' => 'usd',
                 'unit_amount' => $plan->price * 100, // cents
                 'recurring' => [
-                    'interval' => $interval,
-                    'interval_count' => $intervalCount,
+                    'interval' => 'month',
+                    'interval_count' => 1,
                 ],
                 'product_data' => [
                     'name' => $plan->name,
@@ -57,15 +60,35 @@ readonly class StripeGateway implements PaymentGatewayInterface
                     ],
                 ],
             ]);
+
+            $plan->updateOrFail([
+                'stripe_price_id' => $price->id,
+            ]);
+
+            return $price->id;
         } catch (ApiErrorException $e) {
             Log::error('Stripe Api error creating Price object: ' . $e->getMessage());
 
-            throw new PlanPriceException('stripe', 'Stripe Api error creating Price object: ' . $e->getMessage(), 500, $e);
+            throw new PlanPriceException(
+                'stripe',
+                'Stripe Api error creating Price object: ' . $e->getMessage(),
+                500,
+                $e
+            );
+        } catch (Throwable $e) {
+            Log::error('Error creating Price object: ' . $e->getMessage());
+
+            throw new PlanPriceException(
+                'stripe',
+                'Error creating Price object: ' . $e->getMessage(),
+                500,
+                $e
+            );
         }
     }
 
     /**
-     * Create subscription
+     * Create subscription directly with Stripe API.
      *
      * @return string Suscription id
      *
@@ -74,32 +97,32 @@ readonly class StripeGateway implements PaymentGatewayInterface
      * @throws PlanPriceException
      * @throws SubscriptionException
      */
-    public function createSubscription(User $user, Plan $plan): string
-    {
-        Log::info('Subscription plan: ', $plan->toArray());
-
-        $customer = $this->createOrRetrieveCustomer($user);
-        $price = $this->createPlanPrice($plan, 'usd', 'month', 1);
-
-        try {
-            $subscription = $this->stripeClient->subscriptions->create([
-                'customer' => $customer,
-                'items' => [
-                    ['price' => $price->id],
-                ],
-                'metadata' => [
-                    'plan_id' => $plan->id,
-                    'user_id' => $user->id,
-                ],
-            ]);
-
-            return $subscription->id;
-        } catch (CardException $e) {
-            Log::error('Error handling customer card: ' . $e->getMessage());
-
-            throw new SubscriptionException('stripe', 'Api error handling customer card: ' . $e->getMessage(), 500, $e);
-        }
-    }
+//    public function createSubscription(User $user, Plan $plan): string
+//    {
+//        Log::info('Subscription plan: ', $plan->toArray());
+//
+//        $customer = $this->createOrRetrieveCustomer($user);
+//        $price = $this->createOrRetrievePlanPrice($plan);
+//
+//        try {
+//            $subscription = $this->stripeClient->subscriptions->create([
+//                'customer' => $customer,
+//                'items' => [
+//                    ['price' => $price],
+//                ],
+//                'metadata' => [
+//                    'plan_id' => $plan->id,
+//                    'user_id' => $user->id,
+//                ],
+//            ]);
+//
+//            return $subscription->id;
+//        } catch (CardException $e) {
+//            Log::error('Error handling customer card: ' . $e->getMessage());
+//
+//            throw new SubscriptionException('stripe', 'Api error handling customer card: ' . $e->getMessage(), 500, $e);
+//        }
+//    }
 
     /**
      * Create or retrieves Stripe customer
@@ -193,13 +216,16 @@ readonly class StripeGateway implements PaymentGatewayInterface
     /**
      * Set and get current subscription data
      */
-    public function setSubscriptionData(?string $subscriptionId, ?string $customerId, CarbonInterface $endsAt): iterable
+    public function setSubscriptionData(
+        ?string          $subscriptionId = null,
+        ?string          $customerId = null,
+        ?CarbonInterface $endsAt = null): array
     {
-        return [
-            'stripe_customer_id' => $customerId,
+        return array_filter([
             'stripe_sub_id' => $subscriptionId,
+            'stripe_customer_id' => $customerId,
             'sub_ends_at' => $endsAt,
-        ];
+        ], fn($value) => !is_null($value));
     }
 
     public function getGatewayName(): string
@@ -220,18 +246,18 @@ readonly class StripeGateway implements PaymentGatewayInterface
         );
     }
 
-    /** Create payment intent for subscription
-     *
-     * Use this if you intend to create your own frontend for paymentIntent page
-     *
-     * @param User $user
-     * @param int $amount Amount for payment.
-     * @param string $planSlug Plan slug for plan.
-     * @return string|null Token used for client-side retrieval using a publishable key.
-     * @throws ApiErrorException
-     * @throws RuntimeException
-     * @throws PaymentIntentException
-     **/
+//    /** Create payment intent for subscription
+//     *
+//     * Use this if you intend to create your own frontend for paymentIntent page
+//     *
+//     * @param User $user
+//     * @param int $amount Amount for payment.
+//     * @param string $planSlug Plan slug for plan.
+//     * @return string|null Token used for client-side retrieval using a publishable key.
+//     * @throws ApiErrorException
+//     * @throws RuntimeException
+//     * @throws PaymentIntentException
+//     **/
 //    private function createPaymentIntent(User $user, int $amount, string $planSlug): ?string
 //    {
 //        try {
@@ -272,9 +298,9 @@ readonly class StripeGateway implements PaymentGatewayInterface
 //    }
 
     /**
-     *      Create session for subscription
+     *     Create session for subscription.
      *
-     *     Use this if you intend to use default frontend stripe page
+     *     Use this if you intend to workflow through default stripe payment flow.
      *
      * @param User $user
      * @param Plan $plan
@@ -285,12 +311,12 @@ readonly class StripeGateway implements PaymentGatewayInterface
     {
         try {
             $checkoutSession = $this->stripeClient->checkout->sessions->create([
-                'payment_method_types' => ['card', 'crypto', 'customer_balance', 'paypal'],
+//                'payment_method_types' => ['card', 'crypto', 'customer_balance', 'paypal'],
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'usd',
                         'product_data' => [
-                            'name' => $plan->name . 'Plan',
+                            'name' => $plan->name . ' Plan',
                             'description' => $plan->description,
                         ],
                         'unit_amount' => $plan->price * 100, //cents
@@ -301,7 +327,7 @@ readonly class StripeGateway implements PaymentGatewayInterface
                     ],
                     'quantity' => 1,
                 ]],
-                'customer_email' => $user->email,
+                'customer' => $user->stripe_customer_id,
                 'client_reference_id' => $user->id,
                 'mode' => 'subscription',
                 'success_url' => route('subscription.success') . '?session_id={CHECKOUT_SESSION_ID}',

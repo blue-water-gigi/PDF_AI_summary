@@ -33,7 +33,7 @@ class User extends Authenticatable
         'pdf_count_resets_at',
         'stripe_customer_id',
         'stripe_sub_id',
-        'stripe_sub_ends_at',
+        'sub_ends_at',
     ];
 
     /**
@@ -57,7 +57,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'pdf_count_resets_at' => 'datetime',
-            'stripe_sub_ends_at' => 'datetime',
+            'sub_ends_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -66,8 +66,8 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::creating(function ($user) {
-            if (! $user->plan_id) {
-                $basicPlan = once(fn () => Plan::where('slug', 'basic')->first());
+            if (!$user->plan_id) {
+                $basicPlan = once(fn() => Plan::where('slug', 'basic')->first());
                 if ($basicPlan) {
                     $user->plan_id = $basicPlan->id;
                     $user->pdf_count = 0;
@@ -89,7 +89,7 @@ class User extends Authenticatable
 
     public function canSummarizePdf(): bool
     {
-        if (! $this->plan_id) {
+        if (!$this->plan_id) {
             return false;
         }
 
@@ -120,10 +120,10 @@ class User extends Authenticatable
      */
     public function hasActiveSub(): bool
     {
-        if (! $this->stripe_sub_id) {
+        if (!$this->stripe_sub_id) {
             return false;
         }
 
-        return ! ($this->stripe_sub_ends_at && $this->stripe_sub_ends_at->isPast());
+        return !($this->sub_ends_at && $this->sub_ends_at->isPast());
     }
 }

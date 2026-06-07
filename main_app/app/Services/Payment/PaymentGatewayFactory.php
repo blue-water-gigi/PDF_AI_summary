@@ -21,7 +21,9 @@ class PaymentGatewayFactory
         'yoomoney' => YoomoneyGateway::class,
     ];
 
-    public function __construct(private readonly Application $app) {}
+    public function __construct(private readonly Application $app)
+    {
+    }
 
     /**
      * Resolves gateway from the container
@@ -30,7 +32,7 @@ class PaymentGatewayFactory
      */
     public function resolve(string $gateway): PaymentGatewayInterface
     {
-        if (! isset($this->gateways[$gateway])) {
+        if (!isset($this->gateways[$gateway])) {
             throw new InvalidArgumentException("Unsupported gateway {$gateway}");
         }
 

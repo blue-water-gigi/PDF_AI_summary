@@ -6,8 +6,9 @@ namespace App\Http\Requests\Subscription;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class SubscribeRequest extends FormRequest
+class DestroySubscriptionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,7 +26,7 @@ class SubscribeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'stripeToken' => ['required', 'string'],
+            'gateway' => ['sometimes', 'string', Rule::in(['stripe', 'yoomoney'])],
         ];
     }
 }

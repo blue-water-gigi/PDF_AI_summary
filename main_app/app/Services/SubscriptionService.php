@@ -25,7 +25,7 @@ readonly class SubscriptionService
      *
      * @throws Throwable
      */
-    public function subscribe(User $user, Plan $plan): void
+    public function subscribe(User $user, Plan $plan): ?string
     {
         try {
             if ($user->hasActiveSub()) {
@@ -35,9 +35,15 @@ readonly class SubscriptionService
                 );
             }
             $customerId = $this->paymentGateway->createOrRetrieveCustomer($user);
-            $subscriptionId = $this->paymentGateway->createSubscription($user, $plan);
 
-            //todo replace with webhook
+            $user->updateOrFail([
+                ...$this->paymentGateway->setSubscriptionData(
+                    customerId: $customerId,
+                ),
+            ]);
+            $user->refresh();
+
+            //todo DB interaction gonna be carried with Webhook
 //            $user->updateOrFail([
 //                'plan_id' => $plan->id,
 //                'pdf_count' => 0,
@@ -47,8 +53,14 @@ readonly class SubscriptionService
 //                    $customerId,
 //                    now()->addMonth()),
 //            ]);
+            return $this->paymentGateway->createCheckoutSession($user, $plan);
         } catch (Throwable $th) {
-            Log::error('Error creating subscription: ' . $th->getMessage());
+            Log::error('Error creating subscription', [
+                'gateway' => $this->paymentGateway->getGatewayName(),
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'error' => $th->getMessage(),
+            ]);
 
             throw $th;
         }
@@ -60,7 +72,7 @@ readonly class SubscriptionService
      * @throws SubscriptionException
      * @throws Throwable
      */
-    public function cancel(User $user, Plan $plan): void
+    public function cancel(User $user): void
     {
         try {
             if (!$user->hasActiveSub()) {
@@ -73,6 +85,7 @@ readonly class SubscriptionService
 
             $this->paymentGateway->cancelSubscription($subscriptionId);
 
+            //todo when Webhook gonna be implemented - merge this into it
             $user->updateOrFail([
                 ...$this->paymentGateway->setSubscriptionData(
                     $subscriptionId,
@@ -81,7 +94,12 @@ readonly class SubscriptionService
                 ),
             ]);
         } catch (Throwable $th) {
-            Log::error('Error canceling subscription: ' . $th->getMessage());
+            Log::error('Error canceling subscription', [
+                'gateway' => $this->paymentGateway->getGatewayName(),
+                'error' => $th->getMessage(),
+                'user_id' => $user->id,
+                'subscription_id' => $subscriptionId ?? null,
+            ]);
 
             throw $th;
         }
@@ -112,7 +130,12 @@ readonly class SubscriptionService
                 'pdf_count_resets_at' => now()->addMonth(),
             ]);
         } catch (Throwable $th) {
-            Log::error('Error changing plan: ' . $th->getMessage());
+            Log::error('Error changing plan', [
+                'gateway' => $this->paymentGateway->getGatewayName(),
+                'error' => $th->getMessage(),
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+            ]);
 
             throw $th;
         }

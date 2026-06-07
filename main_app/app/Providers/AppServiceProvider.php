@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGatewayInterface;
+use App\Exceptions\Payment\SubscriptionException;
 use App\Services\Payment\PaymentGatewayFactory;
+use App\Services\SubscriptionService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Override;
@@ -25,7 +28,10 @@ class AppServiceProvider extends ServiceProvider
         ));
 
         // Payment factory
-        $this->app->singletonIf(PaymentGatewayFactory::class);
+        $this->app->singletonIf(
+            PaymentGatewayFactory::class,
+            fn($app) => new PaymentGatewayFactory($app)
+        );
     }
 
     /**
