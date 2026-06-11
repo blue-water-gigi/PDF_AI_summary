@@ -50,6 +50,21 @@ services:
       timeout: 5s
       retries: 5
 
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    container_name: app_stripe_cli
+    command: listen --forward-to http://nginx/webhook/stripe --skip-verify
+    env_file:
+      - ./main_app/.env
+    environment:
+      STRIPE_API_KEY: "${STRIPE_SECRET}"
+      STRIPE_DEVICE_NAME: docker_dev
+    networks:
+      - app_network
+    depends_on:
+      - nginx
+    restart: on-failure
+
 networks:
   app_network:
     driver: bridge
