@@ -27,7 +27,7 @@ readonly class StripeWebhookVerifier
         try {
             $event = StripeWebhook::constructEvent(
                 $webhook->getRawBody(),
-                $webhook->getSignature(),
+                $webhook->getSignature('Stripe-Signature'),
                 config('services.stripe.webhook_secret'),
             );
 
@@ -50,7 +50,7 @@ readonly class StripeWebhookVerifier
                 $webhook->getPlatform(),
                 message: 'Invalid payload. Value does not match with a set of values',
                 code: 500,
-                previous: $e->getPrevious(),
+                previous: $e,
             );
         } catch (SignatureVerificationException $e) {
             Log::error('Invalid signature. Signature verification for a webhook fails', [
@@ -65,7 +65,7 @@ readonly class StripeWebhookVerifier
                 $webhook->getPlatform(),
                 message: 'Invalid signature. Signature verification for a webhook fails',
                 code: 500,
-                previous: $e->getPrevious(),
+                previous: $e,
             );
         } catch (Throwable $th) {
             Log::error('Error verifying signature.', [
@@ -80,7 +80,7 @@ readonly class StripeWebhookVerifier
                 $webhook->getPlatform(),
                 message: 'Error verifying signature.',
                 code: 500,
-                previous: $th->getPrevious(),
+                previous: $th,
             );
         }
     }

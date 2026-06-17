@@ -4,6 +4,7 @@ namespace App\Handlers;
 
 use App\Contracts\WebhookHandler;
 use App\DTO\Webhook;
+use App\Exceptions\Webhook\EventRouterException;
 use App\Handlers\Stripe\StripeEventRouter;
 use App\Handlers\Stripe\StripeWebhookVerifier;
 use Stripe\Exception\SignatureVerificationException;
@@ -24,6 +25,7 @@ class StripeWebhookHandler implements WebhookHandler
         return $webhook->getPlatform() === self::SUPPORTED_PLATFORM;
     }
 
+
     /**
      * Handle the stripe webhook depending on the webhook's type.
      *
@@ -31,6 +33,7 @@ class StripeWebhookHandler implements WebhookHandler
      * @return void
      * @throws SignatureVerificationException
      * @throws Throwable
+     * @throws EventRouterException
      */
     public function handle(Webhook $webhook): void
     {

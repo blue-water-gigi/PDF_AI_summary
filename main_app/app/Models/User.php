@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\DTO\SubscriptionStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Override;
@@ -31,9 +33,6 @@ class User extends Authenticatable
         'plan_id',
         'pdf_count',
         'pdf_count_resets_at',
-        'stripe_customer_id',
-        'stripe_sub_id',
-        'sub_ends_at',
     ];
 
     /**
@@ -57,7 +56,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'pdf_count_resets_at' => 'datetime',
-            'sub_ends_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -85,6 +83,11 @@ class User extends Authenticatable
     public function pdfSummaries(): HasMany
     {
         return $this->hasMany(PdfSummary::class);
+    }
+
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
     }
 
     public function canSummarizePdf(): bool
@@ -120,10 +123,7 @@ class User extends Authenticatable
      */
     public function hasActiveSub(): bool
     {
-        if (!$this->stripe_sub_id) {
-            return false;
-        }
-
-        return !($this->sub_ends_at && $this->sub_ends_at->isPast());
+        return $this->subscription?->status === SubscriptionStatus::ACTIVE
+            && $this->subscription?->current_period_end->isFuture();
     }
 }

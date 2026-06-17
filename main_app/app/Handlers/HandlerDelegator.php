@@ -18,7 +18,7 @@ readonly class HandlerDelegator
     }
 
     /**
-     * Loop through handlers and choose the right one for certain webhook.
+     * Loops through handlers and delegates to the right one for certain Webhook.
      *
      * @param  Webhook  $webhook
      * @return void
@@ -36,7 +36,7 @@ readonly class HandlerDelegator
         throw new HandleDelegatorException(
             $webhook->getPlatform(),
             message: 'No handler found for this webhook.',
-            code: 500,
+            code: 404,
         );
     }
 }

@@ -18,13 +18,13 @@ return new class extends Migration {
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
-            $table->enum('role', ['admin', 'user'])->default('user');
             $table->foreignIdFor(Plan::class)->nullable()->constrained('plans')->nullOnDelete();
+            $table->enum('role', ['admin', 'user'])->default('user');
             $table->integer('pdf_count')->default(0);
             $table->timestamp('pdf_count_resets_at')->nullable();
-            $table->string('stripe_customer_id')->nullable()->default(null); // todo replace with foreignId later?
-            $table->string('stripe_sub_id')->nullable()->default(null); // todo replace with foreignId later?
-            $table->timestamp('sub_ends_at')->nullable()->default(null);
+//            $table->string('stripe_customer_id')->nullable()->default(null); // todo replace with foreignId later?
+//            $table->string('stripe_sub_id')->nullable()->default(null); // todo replace with foreignId later?
+//            $table->timestamp('sub_ends_at')->nullable()->default(null);
             $table->timestamps();
         });
 

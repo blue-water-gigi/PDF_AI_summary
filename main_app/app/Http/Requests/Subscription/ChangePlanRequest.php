@@ -29,7 +29,7 @@ class ChangePlanRequest extends FormRequest
         $currentPlanId = Auth::user()->plan_id;
 
         return [
-            'plan_id' => [
+            'new_plan_id' => [
                 'required',
                 'integer',
                 Rule::exists('plans', 'id'),

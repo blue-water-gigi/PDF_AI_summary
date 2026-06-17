@@ -27,3 +27,6 @@ yarn-error.log
 /.ai
 /.claude
 /.junie
+point.todo
+WebhookRequestLifecycle.excalidraw
+/examples

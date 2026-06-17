@@ -5,23 +5,24 @@ namespace App\DTO;
 readonly class Webhook
 {
 
+
     /**
-     *
-     * @param  array<string,mixed>  $payload
+     * @param  array  $payload
      * @param  string  $platform
      * @param  string  $rawBody
+     * @param  array  $headers
      */
     public function __construct(
         private array $payload,
         private string $platform,
         private string $rawBody,
-        private ?string $signature,
+        private array $headers,
     ) {
     }
 
-    public function getSignature(): string
+    public function getHeaders(): array
     {
-        return $this->signature;
+        return $this->headers;
     }
 
     public function getRawBody(): string
@@ -37,5 +38,12 @@ readonly class Webhook
     public function getPayload(): array
     {
         return $this->payload;
+    }
+
+    public function getSignature(string $headerKey): ?string
+    {
+        $key = strtolower($headerKey);
+        $value = $this->headers[$key] ?? null;
+        return is_array($value) ? ($value[0] ?? null) : $value;
     }
 }

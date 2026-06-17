@@ -9,6 +9,7 @@ use App\Handlers\Stripe\Events\InvoicePaymentSucceededHandler;
 use App\Handlers\Stripe\Events\SubscriptionDeletedHandler;
 use App\Handlers\Stripe\Events\SubscriptionUpdated;
 use App\Handlers\Stripe\StripeEventRouter;
+use App\Repositories\WebhookEventRepository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Stripe\Stripe;
@@ -38,6 +39,7 @@ class StripeServiceProvider extends ServiceProvider
         $this->app->bind(StripeEventRouter::class, function (Application $app) {
             return new StripeEventRouter(
                 $app->tagged(StripeEventsHandlerInterface::class),
+                $app->make(WebhookEventRepository::class)
             );
         });
     }

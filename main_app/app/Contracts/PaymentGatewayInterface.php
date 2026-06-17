@@ -18,7 +18,11 @@ interface PaymentGatewayInterface
 
     public function changePlan(string $subscriptionId, Plan $plan): void;
 
-    public function setSubscriptionData(?string $subscriptionId = null, ?string $customerId = null, ?CarbonInterface $endsAt = null): array;
+    public function setSubscriptionData(
+        ?string $subscriptionId = null,
+        ?string $customerId = null,
+        ?CarbonInterface $endsAt = null
+    ): array;
 
     public function getGatewayName(): string;
 

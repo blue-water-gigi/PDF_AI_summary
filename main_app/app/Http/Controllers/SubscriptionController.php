@@ -8,13 +8,10 @@ use App\Http\Requests\Subscription\ChangePlanRequest;
 use App\Http\Requests\Subscription\DestroySubscriptionRequest;
 use App\Http\Requests\Subscription\StoreSubscriptionRequest;
 use App\Models\Plan;
-use App\Models\User;
 use App\Services\Payment\PaymentGatewayFactory;
 use App\Services\SubscriptionService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -51,7 +48,7 @@ class SubscriptionController extends Controller
                     'name' => $plan->name,
                     'slug' => $plan->slug,
                     'description' => $plan->description,
-                    'price' => (float)$plan->price,
+                    'price' => (float) $plan->price,
                     'pdf_limit' => $plan->pdf_limit,
                     'features' => is_array($plan->features) ? $plan->features : [],
                 ])
@@ -98,14 +95,14 @@ class SubscriptionController extends Controller
     {
         $validated = $request->validated();
         $user = Auth::user();
-        $plan = Plan::query()->findOrFail($validated['plan_id']);
+        $newPlan = Plan::query()->findOrFail($validated['new_plan_id']);
 
         try {
             $service = $this->makeSubscriptionService(
                 $validated['gateway'] ?? config('payment.default_gateway')
             );
 
-            $service->changePlan($user, $plan);
+            $service->changePlan($user, $newPlan);
 
             return redirect()->with('success', 'Plan updated successfully.');
         } catch (\Throwable $th) {
@@ -116,7 +113,7 @@ class SubscriptionController extends Controller
                 'file' => $th->getFile(),
                 'trace' => $th->getTraceAsString(),
                 'user_id' => $user->id,
-                'plan_id' => $plan->id,
+                'plan_id' => $newPlan->id,
             ]);
 
             return back()->withErrors([
@@ -160,7 +157,7 @@ class SubscriptionController extends Controller
     /**
      * Generate a SubscriptionService class instance.
      *
-     * @param string $gateway
+     * @param  string  $gateway
      * @return SubscriptionService
      * @throws BindingResolutionException
      */
