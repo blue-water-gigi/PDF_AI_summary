@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(Plan::class)->nullable()->constrained()->nullOnDelete();
             $table->string('gateway');
+            $table->unique(['user_id', 'gateway']);
             $table->string('gateway_customer_id');
             $table->string('gateway_subscription_id');
             $table->string('status'); //enum

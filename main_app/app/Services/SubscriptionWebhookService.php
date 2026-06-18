@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\DTO\Subscription;
+use App\Exceptions\SubscriptionModelException;
 use App\Models\Plan;
+use App\Models\Subscription as SubscriptionModel;
+use App\Models\User;
 use App\Repositories\PlanRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Support\Facades\DB;
@@ -33,21 +36,20 @@ readonly class SubscriptionWebhookService
             $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
             $plan = $this->planRepository->findByPlanId($subscription->planId);
 
-            $user->subscription
-                ->updateOrCreate(
-                    [
-                        'user_id' => $user->id,
-                    ],
-                    [
-                        'plan_id' => $plan->id,
-                        'gateway' => $subscription->gatewayName,
-                        'gateway_customer_id' => $subscription->gatewayCustomerId,
-                        'gateway_subscription_id' => $subscription->gatewaySubscriptionId,
-                        'status' => $subscription->status,
-                        'current_period_end' => $subscription->currentPeriodEnd,
-                        'cancelled_at' => $subscription->cancelledAt,
-                        'trial_ends_at' => $subscription->trialEndsAt
-                    ]);
+            $user->subscription->updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                ],
+                [
+                    'plan_id' => $plan->id,
+                    'gateway' => $subscription->gatewayName,
+                    'gateway_customer_id' => $subscription->gatewayCustomerId,
+                    'gateway_subscription_id' => $subscription->gatewaySubscriptionId,
+                    'status' => $subscription->status,
+                    'current_period_end' => $subscription->currentPeriodEnd,
+                    'cancelled_at' => $subscription->cancelledAt,
+                    'trial_ends_at' => $subscription->trialEndsAt
+                ]);
 
             $subscription->shouldResetUsage
                 ? $user->update([
@@ -81,10 +83,9 @@ readonly class SubscriptionWebhookService
         DB::transaction(function () use ($subscription) {
             $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
 
-            $user->subscription
-                ->update([
-                    'status' => $subscription->status,
-                ]);
+            $this->getSubscriptionOrFail($user, $subscription->gatewayName)->update([
+                'status' => $subscription->status,
+            ]);
         });
     }
 
@@ -101,15 +102,14 @@ readonly class SubscriptionWebhookService
             $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
             $basicPlan = once(fn() => Plan::query()->where(['slug' => 'basic'])->first());
 
-            $user->subscription
-                ->update([
-                    'plan_id' => $basicPlan->id,
+            $this->getSubscriptionOrFail($user, $subscription->gatewayName)->update([
+                'plan_id' => $basicPlan->id,
 //                    'gateway_subscription_id' => $subscription->gatewaySubscriptionId,
-                    'status' => $subscription->status,
-                    'current_period_end' => $subscription->currentPeriodEnd,
-                    'cancelled_at' => $subscription->cancelledAt,
+                'status' => $subscription->status,
+                'current_period_end' => $subscription->currentPeriodEnd,
+                'cancelled_at' => $subscription->cancelledAt,
 //                    'trial_ends_at' => $subscription->trialEndsAt,
-                ]);
+            ]);
 
             $user->update([
                 'plan_id' => $basicPlan->id,
@@ -131,12 +131,11 @@ readonly class SubscriptionWebhookService
             $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
             $plan = $this->planRepository->findByPlanId($subscription->planId);
 
-            $user->subscription
-                ->update([
-                    'plan_id' => $plan->id,
-                    'status' => $subscription->status,
-                    'current_period_end' => $subscription->currentPeriodEnd,
-                ]);
+            $this->getSubscriptionOrFail($user, $subscription->gatewayName)->update([
+                'plan_id' => $plan->id,
+                'status' => $subscription->status,
+                'current_period_end' => $subscription->currentPeriodEnd,
+            ]);
 
             $user->update([
                 'plan_id' => $plan->id,
@@ -159,16 +158,29 @@ readonly class SubscriptionWebhookService
         DB::transaction(function () use ($subscription) {
             $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
 
-            $user->subscription
-                ->update([
-                    'status' => $subscription->status,
-                    'current_period_end' => $subscription->currentPeriodEnd,
-                ]);
+            $this->getSubscriptionOrFail($user, $subscription->gatewayName)->update([
+                'status' => $subscription->status,
+                'current_period_end' => $subscription->currentPeriodEnd,
+            ]);
 
             $user->update([
                 'pdf_count' => 0,
                 'pdf_count_resets_at' => $subscription->currentPeriodEnd
             ]);
         });
+    }
+
+    /**
+     * @param  User  $user
+     * @param  string  $gatewayName
+     * @return SubscriptionModel
+     * @throws SubscriptionModelException
+     */
+    protected function getSubscriptionOrFail(User $user, string $gatewayName): SubscriptionModel
+    {
+        return $user->subscription ?? throw new SubscriptionModelException(
+            $gatewayName,
+            "No subscription record found for user {$user->id}"
+        );
     }
 }
