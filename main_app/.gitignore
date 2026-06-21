@@ -29,4 +29,4 @@ yarn-error.log
 /.junie
 point.todo
 WebhookRequestLifecycle.excalidraw
-/examples
+/tests/Fixtures/examples

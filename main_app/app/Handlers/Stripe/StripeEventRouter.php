@@ -85,7 +85,7 @@ readonly class StripeEventRouter
         }
     }
 
-    private function getType(StripeEvent $event): null|StripeEventType
+    private function getType(StripeEvent $event): ?StripeEventType
     {
         $type = StripeEventType::tryFrom($event->getType());
 

@@ -4,7 +4,7 @@ namespace App\Handlers\Stripe\Events;
 
 use App\Contracts\Stripe\StripeEventsHandlerInterface;
 use App\DTO\Stripe\StripeEvent;
-use App\Http\Requests\Subscription\Stripe\SubscriptionMapper;
+use App\Http\Requests\Subscription\SubscriptionMapper;
 use App\Services\SubscriptionWebhookService;
 use Throwable;
 
@@ -21,7 +21,7 @@ readonly class InvoicePaymentFailedHandler implements StripeEventsHandlerInterfa
      */
     public function handle(StripeEvent $event): void
     {
-        $this->webhookService->handlePaymentFailed(SubscriptionMapper::fromInvoicePaymentFailed($event));
+        $this->webhookService->syncWithStripe(SubscriptionMapper::fromStripeEvent($event));
     }
 
     public function supports(StripeEvent $event): bool

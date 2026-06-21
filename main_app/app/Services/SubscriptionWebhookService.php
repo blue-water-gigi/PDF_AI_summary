@@ -4,11 +4,11 @@ namespace App\Services;
 
 use App\DTO\Subscription;
 use App\Exceptions\SubscriptionModelException;
-use App\Models\Plan;
 use App\Models\Subscription as SubscriptionModel;
 use App\Models\User;
 use App\Repositories\PlanRepository;
 use App\Repositories\UserRepository;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -24,151 +24,79 @@ readonly class SubscriptionWebhookService
     }
 
     /**
-     * Activate the subscription within the transaction.
-     *
-     * @param  Subscription  $subscription
+     * @param  Subscription  $dto
      * @return void
+     * @throws ModelNotFoundException
+     * @throws SubscriptionModelException
      * @throws Throwable
      */
-    public function activate(Subscription $subscription): void
+    public function syncWithStripe(Subscription $dto): void
     {
-        DB::transaction(callback: function () use ($subscription) {
-            $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
-            $plan = $this->planRepository->findByPlanId($subscription->planId);
+        DB::transaction(function () use ($dto) {
+            $user = $this->userRepository->findByGatewayCustomerId($dto->gatewayCustomerId);
 
-            $user->subscription->updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                ],
-                [
-                    'plan_id' => $plan->id,
-                    'gateway' => $subscription->gatewayName,
-                    'gateway_customer_id' => $subscription->gatewayCustomerId,
-                    'gateway_subscription_id' => $subscription->gatewaySubscriptionId,
-                    'status' => $subscription->status,
-                    'current_period_end' => $subscription->currentPeriodEnd,
-                    'cancelled_at' => $subscription->cancelledAt,
-                    'trial_ends_at' => $subscription->trialEndsAt
+            $subscription = $this->getSubscriptionOrFail(
+                $user,
+                $dto->gatewayName,
+            );
+
+            if ($dto->isCancelled) {
+                $subscription->update([
+                    'status' => $dto->status,
+                    'cancelled_at' => $dto->cancelledAt,
                 ]);
 
-            $subscription->shouldResetUsage
-                ? $user->update([
-                'plan_id' => $plan->id,
-                'pdf_count' => 0,
-                'pdf_count_resets_at' => now()->addMonth()
-            ])
-                : $user->update([
-                'plan_id' => $plan->id,
-            ]);
+                return;
+            }
+
+            if ($dto->isPaymentFailed) {
+                $subscription->update([
+                    'status' => $dto->status,
+                ]);
+
+                return;
+            }
+
+            if ($dto->isPaymentSucceeded) {
+                $subscription->update([
+                    'status' => $dto->status,
+                    'current_period_end' => $dto->currentPeriodEnd,
+                ]);
+
+                $user->update([
+                    'pdf_count' => 0,
+                    'pdf_count_resets_at' => $dto->currentPeriodEnd,
+                ]);
+
+                return;
+            }
+
+            if ($dto->isUpdated) {
+                $subscription->update([
+                    'plan_id' => $dto->planId,
+                    'gateway' => $dto->gatewayName,
+                    'gateway_subscription_id' => $dto->gatewaySubscriptionId,
+                    'current_period_end' => $dto->currentPeriodEnd,
+                    'status' => $dto->status,
+                ]);
+            }
+
+            if ($dto->isNewSubscription) {
+                $subscription->update([
+                    'user_id' => $dto->userId,
+                    'plan_id' => $dto->planId,
+                    'gateway' => $dto->gatewayName,
+                    'gateway_customer_id' => $dto->gatewayCustomerId,
+                    'gateway_subscription_id' => $dto->gatewaySubscriptionId,
+                    'status' => $dto->status,
+                ]);
+            }
         });
     }
 
-    /**
-     * Handle payment failure.
-     *
-     * @param  Subscription  $subscription
-     * @return void
-     * @throws Throwable
-     */
-    public function handlePaymentFailed(Subscription $subscription): void
-    {
-        /* situation 1: first time subscribing, then we don't need to do anything in service
-         because user already have basic subscription data in DB and activate method is a
-         transaction so we only need to verify user in controller via Inertia that payment failed
-         */
-
-        /* situation 2: was subscribed to plan, but then resubscription failed
-           then we need to change status, because many platforms trying to retry payment operation.
-        */
-        DB::transaction(function () use ($subscription) {
-            $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
-
-            $this->getSubscriptionOrFail($user, $subscription->gatewayName)->update([
-                'status' => $subscription->status,
-            ]);
-        });
-    }
-
-    /**
-     * Deactivate the subscription within the transaction.
-     *
-     * @param  Subscription  $subscription
-     * @return void
-     * @throws Throwable
-     */
-    public function deactivate(Subscription $subscription): void
-    {
-        DB::transaction(function () use ($subscription) {
-            $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
-            $basicPlan = once(fn() => Plan::query()->where(['slug' => 'basic'])->first());
-
-            $this->getSubscriptionOrFail($user, $subscription->gatewayName)->update([
-                'plan_id' => $basicPlan->id,
-//                    'gateway_subscription_id' => $subscription->gatewaySubscriptionId,
-                'status' => $subscription->status,
-                'current_period_end' => $subscription->currentPeriodEnd,
-                'cancelled_at' => $subscription->cancelledAt,
-//                    'trial_ends_at' => $subscription->trialEndsAt,
-            ]);
-
-            $user->update([
-                'plan_id' => $basicPlan->id,
-                'pdf_count_resets_at' => now()->addMonth(),
-            ]);
-        });
-    }
-
-    /**
-     * Change user's current plan.
-     *
-     * @param  Subscription  $subscription
-     * @return void
-     * @throws Throwable
-     */
-    public function changePlan(Subscription $subscription): void
-    {
-        DB::transaction(function () use ($subscription) {
-            $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
-            $plan = $this->planRepository->findByPlanId($subscription->planId);
-
-            $this->getSubscriptionOrFail($user, $subscription->gatewayName)->update([
-                'plan_id' => $plan->id,
-                'status' => $subscription->status,
-                'current_period_end' => $subscription->currentPeriodEnd,
-            ]);
-
-            $user->update([
-                'plan_id' => $plan->id,
-                'pdf_count' => 0,
-                'pdf_count_resets_at' => now()->addMonth()
-            ]);
-        });
-    }
-
-    /**
-     * Handle payment success.
-     * Duplicates some props from activate method but has idempotency
-     *
-     * @param  Subscription  $subscription
-     * @return void
-     * @throws Throwable
-     */
-    public function handlePaymentSucceed(Subscription $subscription): void
-    {
-        DB::transaction(function () use ($subscription) {
-            $user = $this->userRepository->findByGatewayCustomerId($subscription->gatewayCustomerId);
-
-            $this->getSubscriptionOrFail($user, $subscription->gatewayName)->update([
-                'status' => $subscription->status,
-                'current_period_end' => $subscription->currentPeriodEnd,
-            ]);
-
-            $user->update([
-                'pdf_count' => 0,
-                'pdf_count_resets_at' => $subscription->currentPeriodEnd
-            ]);
-        });
-    }
+//    public function syncWithYoomoney(Subscription $dto): void
+//    {
+//    }
 
     /**
      * @param  User  $user

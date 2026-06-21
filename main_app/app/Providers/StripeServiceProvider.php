@@ -4,10 +4,15 @@ namespace App\Providers;
 
 use App\Contracts\Stripe\StripeEventsHandlerInterface;
 use App\Handlers\Stripe\Events\CheckoutSessionCompletedHandler;
+use App\Handlers\Stripe\Events\CustomerCreatedHandler;
+use App\Handlers\Stripe\Events\CustomerSubscriptionCreatedHandler;
+use App\Handlers\Stripe\Events\CustomerSubscriptionDeletedHandler;
+use App\Handlers\Stripe\Events\CustomerSubscriptionUpdatedHandler;
 use App\Handlers\Stripe\Events\InvoicePaymentFailedHandler;
 use App\Handlers\Stripe\Events\InvoicePaymentSucceededHandler;
-use App\Handlers\Stripe\Events\SubscriptionDeletedHandler;
-use App\Handlers\Stripe\Events\SubscriptionUpdated;
+use App\Handlers\Stripe\Events\PaymentIntentFailedHandler;
+use App\Handlers\Stripe\Events\PaymentIntentRequiresActionHandler;
+use App\Handlers\Stripe\Events\PaymentIntentSucceededHandler;
 use App\Handlers\Stripe\StripeEventRouter;
 use App\Repositories\WebhookEventRepository;
 use Illuminate\Contracts\Foundation\Application;
@@ -30,10 +35,15 @@ class StripeServiceProvider extends ServiceProvider
         // event router
         $this->app->tag([
             CheckoutSessionCompletedHandler::class,
+            CustomerCreatedHandler::class,
+            CustomerSubscriptionCreatedHandler::class,
+            CustomerSubscriptionUpdatedHandler::class,
+            CustomerSubscriptionDeletedHandler::class,
             InvoicePaymentFailedHandler::class,
             InvoicePaymentSucceededHandler::class,
-            SubscriptionDeletedHandler::class,
-            SubscriptionUpdated::class,
+            PaymentIntentSucceededHandler::class,
+            PaymentIntentFailedHandler::class,
+            PaymentIntentRequiresActionHandler::class,
         ], StripeEventsHandlerInterface::class);
 
         $this->app->bind(StripeEventRouter::class, function (Application $app) {

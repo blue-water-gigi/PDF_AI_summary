@@ -66,7 +66,7 @@ enum StripeEventType: string
             self::RadarEarlyFraudWarningCreated => 'security',
 
             self::CustomerSubscriptionTrialWillEnd,
-            self::InvoicePaymentActionRequired => 'high_priority',
+            self::InvoicePaymentActionRequired => 'notifications',
         };
     }
 }

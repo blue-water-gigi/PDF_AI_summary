@@ -8,7 +8,7 @@ use App\Http\Requests\Subscription\SubscriptionMapper;
 use App\Services\SubscriptionWebhookService;
 use Throwable;
 
-readonly class InvoicePaymentSucceededHandler implements StripeEventsHandlerInterface
+readonly class CustomerSubscriptionUpdatedHandler implements StripeEventsHandlerInterface
 {
     public function __construct(private SubscriptionWebhookService $webhookService)
     {
@@ -26,6 +26,6 @@ readonly class InvoicePaymentSucceededHandler implements StripeEventsHandlerInte
 
     public function supports(StripeEvent $event): bool
     {
-        return StripeEventType::InvoicePaymentSucceeded->value === $event->getType();
+        return StripeEventType::CustomerSubscriptionUpdated->value === $event->getType();
     }
 }

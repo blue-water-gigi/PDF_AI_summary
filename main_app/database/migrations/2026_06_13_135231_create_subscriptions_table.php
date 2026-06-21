@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->string('gateway_subscription_id');
             $table->string('status'); //enum
             $table->timestamp('current_period_end')->nullable();
-            $table->timestamp('cancelled_at')->nullable();
+            $table->timestamp('canceled_at')->nullable();
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamps();
         });
