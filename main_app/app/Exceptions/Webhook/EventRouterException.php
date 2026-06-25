@@ -1,6 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Exceptions\Webhook;
+
+use Throwable;
 
 class EventRouterException extends WebhookException
 {
@@ -8,9 +12,9 @@ class EventRouterException extends WebhookException
         private readonly string $eventType,
         string $platform,
         string $group = '',
-        string $message = "",
+        string $message = '',
         int $code = 0,
-        ?\Throwable $previous = null
+        ?Throwable $previous = null
     ) {
         parent::__construct($platform, $group, $message, $code, $previous);
     }

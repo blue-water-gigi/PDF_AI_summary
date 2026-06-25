@@ -24,27 +24,22 @@ class AppServiceProvider extends ServiceProvider
         // Payment factory
         $this->app->singletonIf(
             PaymentGatewayFactory::class,
-            fn($app) => new PaymentGatewayFactory($app)
+            fn ($app) => new PaymentGatewayFactory($app)
         );
 
-
-        //platforms webhook's handler
+        // platforms webhook's handler
         $this->app->tag([
             StripeWebhookHandler::class,
             YoomoneyWebhookHandler::class,
         ], WebhookHandler::class);
 
-        $this->app->bind(HandlerDelegator::class, function (Application $app): HandlerDelegator {
-            return new HandlerDelegator(
-                $app->tagged(WebhookHandler::class),
-            );
-        });
+        $this->app->bind(HandlerDelegator::class, fn (Application $app): HandlerDelegator => new HandlerDelegator(
+            $app->tagged(WebhookHandler::class),
+        ));
     }
 
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
-    }
+    public function boot(): void {}
 }

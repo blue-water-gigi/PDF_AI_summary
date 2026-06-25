@@ -16,9 +16,7 @@ readonly class SubscriptionService
     /**
      * Create a new class instance.
      */
-    public function __construct(private PaymentGatewayInterface $paymentGateway)
-    {
-    }
+    public function __construct(private PaymentGatewayInterface $paymentGateway) {}
 
     /**
      * Subscribe user to a certain plan
@@ -69,7 +67,7 @@ readonly class SubscriptionService
     public function cancel(User $user): void
     {
         try {
-            if (!$user->hasActiveSub()) {
+            if (! $user->hasActiveSub()) {
                 throw new SubscriptionException(
                     $this->paymentGateway->getGatewayName(),
                     'No active subscription found.',
@@ -100,7 +98,7 @@ readonly class SubscriptionService
     public function changePlan(User $user, Plan $newPlan): void
     {
         try {
-            if (!$user->hasActiveSub()) {
+            if (! $user->hasActiveSub()) {
                 throw new SubscriptionException(
                     $this->paymentGateway->getGatewayName(),
                     'No active subscription found.',

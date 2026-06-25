@@ -1,24 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO;
 
 readonly class Webhook
 {
-
-
-    /**
-     * @param  array  $payload
-     * @param  string  $platform
-     * @param  string  $rawBody
-     * @param  array  $headers
-     */
     public function __construct(
         private array $payload,
         private string $platform,
         private string $rawBody,
         private array $headers,
-    ) {
-    }
+    ) {}
 
     public function getHeaders(): array
     {
@@ -42,8 +35,15 @@ readonly class Webhook
 
     public function getSignature(string $headerKey): ?string
     {
-        $key = strtolower($headerKey);
-        $value = $this->headers[$key] ?? null;
-        return is_array($value) ? ($value[0] ?? null) : $value;
+        // Header names may be provided with different casing by the HTTP layer
+        // (e.g. Symfony returns lowercase keys). Perform a case-insensitive
+        // lookup to be robust in both unit tests and real HTTP requests.
+        foreach ($this->headers as $key => $value) {
+            if (strtolower((string) $key) === strtolower($headerKey)) {
+                return is_array($value) ? ($value[0] ?? null) : $value;
+            }
+        }
+
+        return null;
     }
 }

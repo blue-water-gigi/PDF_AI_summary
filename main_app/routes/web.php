@@ -12,7 +12,7 @@ use Inertia\Inertia;
 Route::get('/', [SubscriptionController::class, 'index'])->name('home');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', fn() => Inertia::render('dashboard'))
+    Route::get('dashboard', fn () => Inertia::render('dashboard'))
         ->name('dashboard');
     Route::post('/subscription', [SubscriptionController::class, 'store'])
         ->name('subscription.store');

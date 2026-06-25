@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Models\WebhookEvent;
@@ -7,17 +9,10 @@ use Illuminate\Database\UniqueConstraintViolationException;
 
 class WebhookEventRepository
 {
-
     /**
      *  Retrieve event by its platform, id, type and payload.
      *  If not - create one.
      *  Default status = 'processing'
-     *
-     * @param  string  $platform
-     * @param  string  $eventId
-     * @param  string  $eventType
-     * @param  array  $payload
-     * @return WebhookEvent
      */
     public function findOrCreateByEventId(
         string $platform,
@@ -31,9 +26,9 @@ class WebhookEventRepository
                 'event_id' => $eventId,
                 'event_type' => $eventType,
                 'status' => 'processing',
-                'payload' => $payload
+                'payload' => $payload,
             ]);
-        } catch (UniqueConstraintViolationException $e) {
+        } catch (UniqueConstraintViolationException) {
             return WebhookEvent::query()
                 ->where('event_id', $eventId)
                 ->where('platform', $platform)

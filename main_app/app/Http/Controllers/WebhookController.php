@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\DTO\Webhook;
@@ -14,9 +16,7 @@ use Throwable;
 
 class WebhookController extends Controller
 {
-    public function __construct(private readonly HandlerDelegator $handler)
-    {
-    }
+    public function __construct(private readonly HandlerDelegator $handler) {}
 
     /**
      * Handle incoming webhook from a payment gateway.
@@ -24,10 +24,6 @@ class WebhookController extends Controller
      * for a known event type) is intentionally caught and answered with 200,
      * so Stripe does not spam retries for what is likely a code-level issue
      * rather than a transient one.
-     *
-     * @param  Request  $request
-     * @param  string  $platform
-     * @return Response
      */
     public function __invoke(Request $request, string $platform): Response
     {
@@ -44,12 +40,12 @@ class WebhookController extends Controller
             return response()->json([
                 'message' => "Webhook received from {$platform}",
             ], Response::HTTP_OK);
-        } catch (WebhookVerifierException $e) {
+        } catch (WebhookVerifierException) {
             return response(
                 'Invalid payload or signature.',
                 Response::HTTP_BAD_REQUEST
             );
-        } catch (HandleDelegatorException $e) {
+        } catch (HandleDelegatorException) {
             return response(
                 'Unknown webhook platform.',
                 Response::HTTP_NOT_FOUND

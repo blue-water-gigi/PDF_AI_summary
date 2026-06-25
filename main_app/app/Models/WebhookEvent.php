@@ -1,13 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Database\Factories\WebhookEventFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Override;
 
 class WebhookEvent extends Model
 {
-    /** @use HasFactory<\Database\Factories\WebhookEventFactory> */
+    /** @use HasFactory<WebhookEventFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -21,6 +25,7 @@ class WebhookEvent extends Model
         'processed_at',
     ];
 
+    #[Override]
     protected function casts(): array
     {
         return [
@@ -51,4 +56,3 @@ class WebhookEvent extends Model
         ]);
     }
 }
-

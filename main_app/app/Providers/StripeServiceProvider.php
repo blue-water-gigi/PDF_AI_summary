@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Contracts\Stripe\StripeEventsHandlerInterface;
@@ -17,6 +19,7 @@ use App\Handlers\Stripe\StripeEventRouter;
 use App\Repositories\WebhookEventRepository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
+use Override;
 use Stripe\Stripe;
 use Stripe\StripeClient;
 
@@ -25,10 +28,11 @@ class StripeServiceProvider extends ServiceProvider
     /**
      * Register services.
      */
+    #[Override]
     public function register(): void
     {
         // client
-        $this->app->singletonIf(StripeClient::class, fn() => new StripeClient(
+        $this->app->singletonIf(StripeClient::class, fn () => new StripeClient(
             config('services.stripe.secret'),
         ));
 
@@ -46,12 +50,10 @@ class StripeServiceProvider extends ServiceProvider
             PaymentIntentRequiresActionHandler::class,
         ], StripeEventsHandlerInterface::class);
 
-        $this->app->bind(StripeEventRouter::class, function (Application $app) {
-            return new StripeEventRouter(
-                $app->tagged(StripeEventsHandlerInterface::class),
-                $app->make(WebhookEventRepository::class)
-            );
-        });
+        $this->app->bind(StripeEventRouter::class, fn (Application $app): StripeEventRouter => new StripeEventRouter(
+            $app->tagged(StripeEventsHandlerInterface::class),
+            $app->make(WebhookEventRepository::class)
+        ));
     }
 
     /**

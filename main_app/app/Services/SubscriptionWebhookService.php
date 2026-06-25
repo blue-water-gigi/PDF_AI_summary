@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\DTO\Subscription;
 use App\Exceptions\SubscriptionModelException;
 use App\Models\Subscription as SubscriptionModel;
 use App\Models\User;
-use App\Repositories\PlanRepository;
 use App\Repositories\UserRepository;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -19,13 +20,9 @@ readonly class SubscriptionWebhookService
      */
     public function __construct(
         private UserRepository $userRepository,
-        private PlanRepository $planRepository,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param  Subscription  $dto
-     * @return void
      * @throws ModelNotFoundException
      * @throws SubscriptionModelException
      * @throws Throwable
@@ -33,8 +30,29 @@ readonly class SubscriptionWebhookService
     public function syncWithStripe(Subscription $dto): void
     {
         DB::transaction(function () use ($dto) {
-            $user = $this->userRepository->findByGatewayCustomerId($dto->gatewayCustomerId);
+            // For new subscriptions, use userId from DTO; otherwise find by gateway_customer_id
+            $user = $dto->userId
+                ? $this->userRepository->findById($dto->userId)
+                : $this->userRepository->findByGatewayCustomerId($dto->gatewayCustomerId);
 
+            // For new subscriptions, create directly without requiring existing subscription
+            if ($dto->isNewSubscription) {
+                SubscriptionModel::query()->updateOrCreate(
+                    [
+                        'gateway_customer_id' => $dto->gatewayCustomerId,
+                        'gateway' => $dto->gatewayName,
+                    ],
+                    [
+                        'user_id' => $dto->userId,
+                        'plan_id' => $dto->planId,
+                        'gateway_subscription_id' => $dto->gatewaySubscriptionId,
+                        'status' => $dto->status,
+                    ]);
+
+                return;
+            }
+
+            // For existing subscriptions, fetch the subscription record
             $subscription = $this->getSubscriptionOrFail(
                 $user,
                 $dto->gatewayName,
@@ -80,31 +98,15 @@ readonly class SubscriptionWebhookService
                     'status' => $dto->status,
                 ]);
             }
-
-            if ($dto->isNewSubscription) {
-                $subscription->update([
-                    'user_id' => $dto->userId,
-                    'plan_id' => $dto->planId,
-                    'gateway' => $dto->gatewayName,
-                    'gateway_customer_id' => $dto->gatewayCustomerId,
-                    'gateway_subscription_id' => $dto->gatewaySubscriptionId,
-                    'status' => $dto->status,
-                ]);
-            }
         });
     }
 
-//    public function syncWithYoomoney(Subscription $dto): void
-//    {
-//    }
+    public function syncWithYoomoney(Subscription $dto): void {}
 
     /**
-     * @param  User  $user
-     * @param  string  $gatewayName
-     * @return SubscriptionModel
      * @throws SubscriptionModelException
      */
-    protected function getSubscriptionOrFail(User $user, string $gatewayName): SubscriptionModel
+    private function getSubscriptionOrFail(User $user, string $gatewayName): SubscriptionModel
     {
         return $user->subscription ?? throw new SubscriptionModelException(
             $gatewayName,

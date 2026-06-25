@@ -2,11 +2,13 @@
 
 use App\DTO\Stripe\StripeEvent;
 use App\Handlers\Stripe\Events\CheckoutSessionCompletedHandler;
+use App\Handlers\Stripe\Events\CustomerSubscriptionCreatedHandler;
+use App\Handlers\Stripe\Events\CustomerSubscriptionDeletedHandler;
+use App\Handlers\Stripe\Events\CustomerSubscriptionUpdatedHandler;
 use App\Handlers\Stripe\Events\InvoicePaymentFailedHandler;
 use App\Handlers\Stripe\Events\InvoicePaymentSucceededHandler;
 use App\Handlers\Stripe\Events\StripeEventType;
-use App\Handlers\Stripe\Events\SubscriptionDeletedHandler;
-use App\Handlers\Stripe\Events\SubscriptionUpdated;
+use App\Services\SubscriptionWebhookService;
 
 test('Handlers supports their respective events',
     function (string $eventId, string $eventType, array $eventData, array $eventMetadata, array $expectations): void {
@@ -17,22 +19,43 @@ test('Handlers supports their respective events',
             $eventMetadata
         );
 
+        $service = app()->make(SubscriptionWebhookService::class);
+
         $handlers = [
-            $firstHandler = new CheckoutSessionCompletedHandler(),
-            $secondHandler = new InvoicePaymentFailedHandler(),
-            $thirdHandler = new InvoicePaymentSucceededHandler(),
-            $fourthHandler = new SubscriptionDeletedHandler(),
-            $fifthHandler = new SubscriptionUpdated(),
+            new CheckoutSessionCompletedHandler($service),
+            new InvoicePaymentFailedHandler($service),
+            new InvoicePaymentSucceededHandler($service),
+            new CustomerSubscriptionDeletedHandler($service),
+            new CustomerSubscriptionUpdatedHandler($service),
+            new CustomerSubscriptionCreatedHandler($service),
         ];
 
         foreach ($handlers as $index => $handler) {
             expect($handler->supports($event))->toBe($expectations[$index]);
-            continue;
         }
     })->with([
-    ['event_1', StripeEventType::CheckoutSessionCompleted->value, [], [], [true, false, false, false, false]],
-    ['event_2', StripeEventType::InvoicePaymentFailed->value, [], [], [false, true, false, false, false]],
-    ['event_3', StripeEventType::InvoicePaymentSucceeded->value, [], [], [false, false, true, false, false]],
-    ['event_4', StripeEventType::CustomerSubscriptionDeleted->value, [], [], [false, false, false, true, false]],
-    ['event_5', StripeEventType::CustomerSubscriptionUpdated->value, [], [], [false, false, false, false, true]],
-]);
+        [
+            'checkout.session.completed', StripeEventType::CheckoutSessionCompleted->value, [], [],
+            [true, false, false, false, false, false],
+        ],
+        [
+            'invoice.payment_failed', StripeEventType::InvoicePaymentFailed->value, [], [],
+            [false, true, false, false, false, false],
+        ],
+        [
+            'invoice.payment_succeeded', StripeEventType::InvoicePaymentSucceeded->value, [], [],
+            [false, false, true, false, false, false],
+        ],
+        [
+            'customer.subscription.deleted', StripeEventType::CustomerSubscriptionDeleted->value, [], [],
+            [false, false, false, true, false, false],
+        ],
+        [
+            'customer.subscription.updated', StripeEventType::CustomerSubscriptionUpdated->value, [], [],
+            [false, false, false, false, true, false],
+        ],
+        [
+            'customer.subscription.created', StripeEventType::CustomerSubscriptionCreated->value, [], [],
+            [false, false, false, false, false, true],
+        ],
+    ]);

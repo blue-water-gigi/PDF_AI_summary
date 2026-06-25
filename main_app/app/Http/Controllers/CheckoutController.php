@@ -17,7 +17,7 @@ class CheckoutController extends Controller
     {
         return Inertia::render('Checkout/Index', [
             'plan' => $plan,
-            'gateways' => config('payment.available_gateways')
+            'gateways' => config('payment.available_gateways'),
         ]);
     }
 }

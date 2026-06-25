@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Handlers\Stripe\Events;
 
 enum StripeEventType: string
@@ -34,11 +36,8 @@ enum StripeEventType: string
     case CustomerSubscriptionTrialWillEnd = 'customer.subscription.trial_will_end';
     case InvoicePaymentActionRequired = 'invoice.payment_action_required';
 
-
     /**
      * Get sections for an enum
-     *
-     * @return string
      */
     public function group(): string
     {

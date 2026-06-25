@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 return [
 
     /*
@@ -26,7 +29,6 @@ return [
 
     'available_gateways' => [
         'stripe',
-        'yoomoney'
+        'yoomoney',
     ],
 ];
-

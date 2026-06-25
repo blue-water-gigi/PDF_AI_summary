@@ -6,7 +6,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -20,9 +21,9 @@ return new class extends Migration {
             $table->unique(['user_id', 'gateway']);
             $table->string('gateway_customer_id');
             $table->string('gateway_subscription_id');
-            $table->string('status'); //enum
+            $table->string('status'); // enum
             $table->timestamp('current_period_end')->nullable();
-            $table->timestamp('canceled_at')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamps();
         });

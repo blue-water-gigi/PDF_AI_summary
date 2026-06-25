@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Handlers\Stripe;
 
 use App\DTO\Stripe\StripeEvent;
@@ -16,8 +18,6 @@ readonly class StripeWebhookVerifier
     /**
      * Verify webhook payload and convert to DTO
      *
-     * @param  Webhook  $webhook
-     * @return StripeEvent
      * @throws SignatureVerificationException
      * @throws UnexpectedValueException
      * @throws Throwable
@@ -34,8 +34,8 @@ readonly class StripeWebhookVerifier
             return new StripeEvent(
                 $event->id,
                 $event->type,
-                $event->data->object ?? [],
-                $event->data->object->metadata ?? [],
+                $event->data->object?->toArray() ?? [],
+                $event->data->object?->metadata?->toArray() ?? [],
             );
         } catch (UnexpectedValueException $e) {
             Log::error('Invalid payload. Value does not match with a set of values', [
@@ -85,4 +85,3 @@ readonly class StripeWebhookVerifier
         }
     }
 }
-

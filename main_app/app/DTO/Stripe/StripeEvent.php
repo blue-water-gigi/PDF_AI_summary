@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO\Stripe;
 
 readonly class StripeEvent
@@ -12,9 +14,7 @@ readonly class StripeEvent
         private string $type,
         private array $data,
         private array $metadata,
-    ) {
-        //
-    }
+    ) {}
 
     public function getObjectId(): string
     {

@@ -1,22 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Handlers\Stripe\Events;
 
 use App\Contracts\Stripe\StripeEventsHandlerInterface;
 use App\DTO\Stripe\StripeEvent;
-use App\Http\Requests\Subscription\SubscriptionMapper;
+use App\Mappers\SubscriptionMapper;
 use App\Services\SubscriptionWebhookService;
 use Throwable;
 
 readonly class PaymentIntentSucceededHandler implements StripeEventsHandlerInterface
 {
-    public function __construct(private SubscriptionWebhookService $webhookService)
-    {
-    }
+    public function __construct(private SubscriptionWebhookService $webhookService) {}
 
     /**
-     * @param  StripeEvent  $event
-     * @return void
      * @throws Throwable
      */
     public function handle(StripeEvent $event): void

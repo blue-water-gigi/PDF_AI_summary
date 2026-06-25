@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Models\User;
@@ -11,10 +13,6 @@ class UserRepository
         return User::query()->findOrFail($userId);
     }
 
-    /**
-     * @param  string  $customerId
-     * @return User
-     */
     public function findByGatewayCustomerId(string $customerId): User
     {
         return User::query()

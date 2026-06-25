@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Handlers;
 
 use App\Contracts\WebhookHandler;
@@ -13,15 +15,11 @@ readonly class HandlerDelegator
      *
      * @param  iterable<WebhookHandler>  $handlers
      */
-    public function __construct(private iterable $handlers)
-    {
-    }
+    public function __construct(private iterable $handlers) {}
 
     /**
      * Loops through handlers and delegates to the right one for certain Webhook.
      *
-     * @param  Webhook  $webhook
-     * @return void
      * @throws HandleDelegatorException
      */
     public function delegate(Webhook $webhook): void
@@ -29,6 +27,7 @@ readonly class HandlerDelegator
         foreach ($this->handlers as $handler) {
             if ($handler->supports($webhook)) {
                 $handler->handle($webhook);
+
                 return;
             }
         }

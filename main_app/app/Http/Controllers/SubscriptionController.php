@@ -16,12 +16,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Throwable;
 
 class SubscriptionController extends Controller
 {
-    public function __construct(private readonly PaymentGatewayFactory $factory)
-    {
-    }
+    public function __construct(private readonly PaymentGatewayFactory $factory) {}
 
     public function index(): InertiaResponse
     {
@@ -43,7 +42,7 @@ class SubscriptionController extends Controller
                 ->where('is_active', true)
                 ->orderBy('price')
                 ->get()
-                ->map(fn(Plan $plan): array => [
+                ->map(fn (Plan $plan): array => [
                     'id' => $plan->id,
                     'name' => $plan->name,
                     'slug' => $plan->slug,
@@ -74,7 +73,7 @@ class SubscriptionController extends Controller
             );
 
             return redirect()->away($service->subscribe($user, $plan));
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             Log::error('Error creating subscription', [
                 'message' => $th->getMessage(),
                 'code' => $th->getCode(),
@@ -105,7 +104,7 @@ class SubscriptionController extends Controller
             $service->changePlan($user, $newPlan);
 
             return redirect()->with('success', 'Plan updated successfully.');
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             Log::error('Error updating subscription', [
                 'message' => $th->getMessage(),
                 'code' => $th->getCode(),
@@ -136,7 +135,7 @@ class SubscriptionController extends Controller
             $service->cancel($user);
 
             return redirect()->with('success', 'Unsubscribed successfully.');
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             Log::error('Error canceling subscription', [
                 'message' => $th->getMessage(),
                 'code' => $th->getCode(),
@@ -153,12 +152,9 @@ class SubscriptionController extends Controller
         }
     }
 
-
     /**
      * Generate a SubscriptionService class instance.
      *
-     * @param  string  $gateway
-     * @return SubscriptionService
      * @throws BindingResolutionException
      */
     private function makeSubscriptionService(string $gateway): SubscriptionService

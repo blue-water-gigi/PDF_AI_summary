@@ -11,7 +11,6 @@ use Carbon\CarbonInterface;
 
 class YooMoneyGateway implements PaymentGatewayInterface
 {
-
     public function createOrRetrieveCustomer(User $user): string
     {
         // TODO: Implement createOrRetrieveCustomer() method.

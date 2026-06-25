@@ -7,7 +7,7 @@ use App\Handlers\StripeWebhookHandler;
 use App\Handlers\YoomoneyWebhookHandler;
 
 test('Stripe handler supports only stripe platform', function (string $platform, bool $expected) {
-    $webhook = new Webhook(['data' => 'test data'], $platform, 'body', 'signature');
+    $webhook = new Webhook(['data' => 'test data'], $platform, 'body', ['signature']);
 
     $eventRouter = $this->createMock(StripeEventRouter::class);
     $verifier = $this->createMock(StripeWebhookVerifier::class);
@@ -16,17 +16,15 @@ test('Stripe handler supports only stripe platform', function (string $platform,
 })->with([
     ['stripe', true],
     ['yoomoney', false],
-    ['random', false]
+    ['random', false],
 ]);
 
 test('Yoomoney handler supports only yoomoney platform', function (string $platform, bool $expected) {
-    $webhook = new Webhook(['data' => 'test data'], $platform, 'body', 'signature');
+    $webhook = new Webhook(['data' => 'test data'], $platform, 'body', ['signature']);
 
     expect(new YoomoneyWebhookHandler()->supports($webhook))->toBe($expected);
 })->with([
     ['stripe', false],
     ['yoomoney', true],
-    ['random', false]
+    ['random', false],
 ]);
-
-

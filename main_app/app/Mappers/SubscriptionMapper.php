@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Requests\Subscription;
+declare(strict_types=1);
+
+namespace App\Mappers;
 
 use App\DTO\Stripe\StripeEvent;
 use App\DTO\Subscription;
@@ -16,20 +18,20 @@ class SubscriptionMapper
         $metadata = $event->getMetadata();
 
         return match ($event->getType()) {
-//            StripeEventType::PaymentIntentSucceeded->value => new Subscription(
-//                gatewayName: 'stripe',
-//                gatewayCustomerId: $data['customer'],
-//            ),
-//            StripeEventType::PaymentIntentPaymentFailed->value => new Subscription(
-//                gatewayName: 'stripe',
-//                gatewayCustomerId: $data['customer'],
-//                description: $data['cancellation_reason'],
-//            ),
-//            StripeEventType::PaymentIntentRequiresAction->value => new Subscription(
-//                gatewayName: 'stripe',
-//                gatewayCustomerId: $data['customer'],
-//                requiresAction: true,
-//            ),
+            //            StripeEventType::PaymentIntentSucceeded->value => new Subscription(
+            //                gatewayName: 'stripe',
+            //                gatewayCustomerId: $data['customer'],
+            //            ),
+            //            StripeEventType::PaymentIntentPaymentFailed->value => new Subscription(
+            //                gatewayName: 'stripe',
+            //                gatewayCustomerId: $data['customer'],
+            //                description: $data['cancellation_reason'],
+            //            ),
+            //            StripeEventType::PaymentIntentRequiresAction->value => new Subscription(
+            //                gatewayName: 'stripe',
+            //                gatewayCustomerId: $data['customer'],
+            //                requiresAction: true,
+            //            ),
 
             StripeEventType::CustomerSubscriptionCreated->value => new Subscription(
                 userId: $metadata['user_id'],
@@ -47,7 +49,7 @@ class SubscriptionMapper
                 gatewaySubscriptionId: $data['id'],
                 status: SubscriptionStatus::mapStripeStatus($data['status']),
                 planId: $metadata['plan_id'],
-                currentPeriodEnd: Carbon::createFromTimestamp($data['items']['data'][0]['0']['current_period_end']),
+                currentPeriodEnd: Carbon::createFromTimestamp($data['items']['data'][0]['current_period_end']),
                 isUpdated: true,
             ),
             StripeEventType::CustomerSubscriptionDeleted->value => new Subscription(
@@ -64,7 +66,7 @@ class SubscriptionMapper
                 gatewayName: 'stripe',
                 gatewayCustomerId: $data['customer'],
                 status: SubscriptionStatus::ACTIVE,
-                currentPeriodEnd: Carbon::createFromTimestamp($data['lines']['data'][0]['0']['parent']['period']['end']),
+                currentPeriodEnd: Carbon::createFromTimestamp($data['lines']['data'][0]['period']['end']),
                 isPaymentSucceeded: true,
             ),
             StripeEventType::InvoicePaymentFailed->value => new Subscription(
@@ -83,9 +85,9 @@ class SubscriptionMapper
                 gatewayName: 'stripe',
                 gatewayCustomerId: $data['id'],
             ),
-            default => new Subscription()
+            default => new Subscription
         };
     }
 
-//    public function fromYoomoneyEvent(YoomoneyEvent $event): Subscription {}
+    //    public function fromYoomoneyEvent(YoomoneyEvent $event): Subscription {}
 }

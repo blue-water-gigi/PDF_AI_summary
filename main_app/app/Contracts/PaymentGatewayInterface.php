@@ -27,5 +27,4 @@ interface PaymentGatewayInterface
     public function getGatewayName(): string;
 
     public function getSubscriptionId(User $user): string;
-
 }

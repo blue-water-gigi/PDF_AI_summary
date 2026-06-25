@@ -1,6 +1,8 @@
 <?php
 
 use App\DTO\Stripe\StripeEvent;
+use App\DTO\Webhook;
+use App\Handlers\Stripe\Events\StripeEventType;
 use App\Handlers\Stripe\StripeEventRouter;
 use App\Handlers\Stripe\StripeWebhookVerifier;
 use App\Handlers\StripeWebhookHandler;
@@ -8,7 +10,7 @@ use App\Handlers\StripeWebhookHandler;
 test('StripeWebhookHandler verifies and handles webhook', function () {
     $event = new StripeEvent(
         'event_1',
-        \App\Handlers\Stripe\Events\StripeEventType::CheckoutSessionCompleted->value,
+        StripeEventType::CheckoutSessionCompleted->value,
         [],
         []
     );
@@ -29,7 +31,7 @@ test('StripeWebhookHandler verifies and handles webhook', function () {
         $verifier,
     );
 
-    $webhook = new \App\DTO\Webhook(['data' => 'test'], 'stripe', 'body', 'sig');
+    $webhook = new Webhook(['data' => 'test'], 'stripe', 'body', ['sig']);
 
     $handler->handle($webhook);
 });

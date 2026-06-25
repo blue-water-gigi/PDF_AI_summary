@@ -1,6 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Providers\AppServiceProvider;
+use App\Providers\StripeServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\StripeServiceProvider::class,
+    AppServiceProvider::class,
+    StripeServiceProvider::class,
 ];

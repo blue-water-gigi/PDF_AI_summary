@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Handlers;
 
 use App\Contracts\WebhookHandler;
@@ -17,20 +19,16 @@ class StripeWebhookHandler implements WebhookHandler
     public function __construct(
         private readonly StripeEventRouter $eventRouter,
         private readonly StripeWebhookVerifier $verifier,
-    ) {
-    }
+    ) {}
 
     public function supports(Webhook $webhook): bool
     {
         return $webhook->getPlatform() === self::SUPPORTED_PLATFORM;
     }
 
-
     /**
      * Handle the stripe webhook depending on the webhook's type.
      *
-     * @param  Webhook  $webhook
-     * @return void
      * @throws SignatureVerificationException
      * @throws Throwable
      * @throws EventRouterException

@@ -1,152 +1,163 @@
 <?php
 
-
 use App\DTO\Stripe\StripeEvent;
+use App\DTO\Subscription;
 use App\DTO\SubscriptionStatus;
-use App\Http\Requests\Subscription\SubscriptionMapper;
+use App\Mappers\SubscriptionMapper;
+use Carbon\Carbon;
+use Tests\TestCase;
 
-uses(\Tests\TestCase::class);
+uses(TestCase::class);
 
-test('SubscriptionMapper::fromCheckoutSessionCompleted extracts the required information from event and forms correct Subscription DTO',
-    function () {
-        $json = getCheckoutSessionCompletedMock();
-
-        $json['object']['customer'] = 'cus_test';
-        $json['object']['subscription'] = 'sub_test';
-        $json['object']['metadata']['user_id'] = 1;
-        $json['object']['metadata']['plan_id'] = 1;
-
-        $event = new StripeEvent(
-            $json['object']['id'],
-            'checkout.session.completed',
-            $json['object'],
-            $json['object']['metadata']
-        );
-
-        $subscription = SubscriptionMapper::fromCheckoutSessionCompleted($event);
-
-        expect($subscription)->toBeInstanceOf(App\DTO\Subscription::class)
-            ->and($subscription)->toHaveProperties([
-                'userId',
-                'gatewayName',
-                'gatewayCustomerId',
-                'gatewaySubscriptionId',
-                'status',
-                'planId',
-                'currentPeriodEnd',
-                'cancelledAt',
-                'trialEndsAt',
-                'shouldResetUsage'
-            ])
-            ->and($subscription->toArray())->toMatchArray([
-                'gatewayData' => [
-                    'gatewayName' => 'stripe',
-                    'gatewayCustomerId' => $json['object']['customer'],
-                    'gatewaySubscriptionId' => $json['object']['subscription'],
-                    'currentPeriodEnd' => null,
-                    'cancelledAt' => null,
-                    'trialEndsAt' => null,
-                ],
-                'modelData' => [
-                    'userId' => $json['object']['metadata']['user_id'],
-                    'planId' => $json['object']['metadata']['plan_id'],
-                    'status' => SubscriptionStatus::ACTIVE->value,
-                    'shouldResetUsage' => true
-                ]
-            ]);
-    });
-
-test('SubscriptionMapper::fromInvoicePaymentSucceeded extracts the required information from event and forms correct Subscription DTO',
-    function () {
-        $json = getFromInvoicePaymentSucceededMock();
-
-        $json['object']['subscription'] = 'sub_test'; // stripe on default don't involve subscription in invoice object, but in real session it does
-        $json['object']['metadata']['user_id'] = 1;
-        $json['object']['metadata']['plan_id'] = 1;
-
-        $event = new StripeEvent(
-            $json['object']['id'],
-            'invoice.payment.succeeded',
-            $json['object'],
-            $json['object']['metadata']
-        );
-
-        $subscription = SubscriptionMapper::fromInvoicePaymentSucceeded($event);
-
-        expect($subscription)->toBeInstanceOf(App\DTO\Subscription::class)
-            ->and($subscription)->toHaveProperties([
-                'userId',
-                'gatewayName',
-                'gatewayCustomerId',
-                'gatewaySubscriptionId',
-                'status',
-                'planId',
-                'currentPeriodEnd',
-                'cancelledAt',
-                'trialEndsAt',
-                'shouldResetUsage'
-            ])
-            ->and($subscription->toArray())->toMatchArray([
-                'gatewayData' => [
-                    'gatewayName' => 'stripe',
-                    'gatewayCustomerId' => $json['object']['customer'],
-                    'gatewaySubscriptionId' => $json['object']['subscription'],
-                    'currentPeriodEnd' => \Illuminate\Support\Carbon::createFromTimestamp($json['object']['lines']['data'][0]['period']['end']),
-                    'cancelledAt' => null,
-                    'trialEndsAt' => null,
-                ],
-                'modelData' => [
-                    'userId' => $json['object']['metadata']['user_id'],
-                    'planId' => $json['object']['metadata']['plan_id'],
-                    'status' => SubscriptionStatus::ACTIVE->value,
-                    'shouldResetUsage' => true
-                ]
-            ]);
-    });
-
-test('SubscriptionMapper::fromSubscriptionDeleted extracts the required information from event and forms correct Subscription DTO',
-    function () {
-        $json = getFromCustomerSubscriptionDeleted();
+test('SubscriptionMapper extracts the required information from customer.subscription events and forms correct Subscription DTO',
+    function (
+        mixed $json,
+        string $type,
+        bool $isNewSubscription,
+        bool $isCancelled,
+        bool $isPaymentFailed,
+        bool $isPaymentSucceeded,
+        bool $isUpdated,
+        SubscriptionStatus $status,
+        ?Carbon $currentPeriodEnd,
+        ?Carbon $cancelledAt
+    ) {
 
         $json['object']['metadata']['user_id'] = 1;
         $json['object']['metadata']['plan_id'] = 1;
 
         $event = new StripeEvent(
             $json['object']['id'],
-            'invoice.subscription.deleted',
+            $type,
             $json['object'],
             $json['object']['metadata']
         );
 
-        $subscription = SubscriptionMapper::fromSubscriptionDeleted($event);
+        $subscription = SubscriptionMapper::fromStripeEvent($event);
 
-        expect($subscription)->toBeInstanceOf(App\DTO\Subscription::class)
+        expect($subscription)->toBeInstanceOf(Subscription::class)
             ->and($subscription)->toHaveProperties([
-                'userId',
                 'gatewayName',
+                'status',
                 'gatewayCustomerId',
                 'gatewaySubscriptionId',
-                'status',
-                'planId',
                 'currentPeriodEnd',
                 'cancelledAt',
                 'trialEndsAt',
-                'shouldResetUsage'
+                'description',
+                'isNewSubscription',
+                'isCancelled',
+                'isPaymentFailed',
+                'isPaymentSucceeded',
+                'isUpdated',
+                'userId',
+                'planId',
             ])
             ->and($subscription->toArray())->toMatchArray([
                 'gatewayData' => [
                     'gatewayName' => 'stripe',
                     'gatewayCustomerId' => $json['object']['customer'],
-                    'gatewaySubscriptionId' => $json['object']['id'],
-                    'currentPeriodEnd' => null,
-                    'cancelledAt' => \Illuminate\Support\Carbon::createFromTimestamp($json['object']['canceled_at']),
+                    'gatewaySubscriptionId' => $json['object']['subscription'] ?? $json['object']['id'],
+                    'currentPeriodEnd' => $currentPeriodEnd,
+                    'cancelledAt' => $cancelledAt,
                     'trialEndsAt' => null,
+                    'description' => [],
+                    'isNewSubscription' => $isNewSubscription,
+                    'isCancelled' => $isCancelled,
+                    'isPaymentFailed' => $isPaymentFailed,
+                    'isPaymentSucceeded' => $isPaymentSucceeded,
+                    'isUpdated' => $isUpdated,
                 ],
                 'modelData' => [
                     'userId' => $json['object']['metadata']['user_id'],
                     'planId' => $json['object']['metadata']['plan_id'],
-                    'status' => SubscriptionStatus::CANCELLED->value,
-                    'shouldResetUsage' => null
-                ]
+                    'status' => $status->value,
+                ],
             ]);
-    });
+    })->with([
+        [
+            getFromCustomerSubscriptionCreated(), 'customer.subscription.created', true, false, false, false, false,
+            SubscriptionStatus::ACTIVE, null, null,
+        ],
+        [
+            getFromCustomerSubscriptionUpdated(), 'customer.subscription.updated', false, false, false, false, true,
+            SubscriptionStatus::ACTIVE, Carbon::createFromTimestamp(1784123138), null,
+        ],
+        [
+            getFromCustomerSubscriptionDeleted(), 'customer.subscription.deleted', false, true, false, false, false,
+            SubscriptionStatus::CANCELED, null, Carbon::createFromTimestamp(1781456440),
+        ],
+    ]);
+
+test('SubscriptionMapper extracts the required information from invoice.payment events and forms correct Subscription DTO',
+    function (
+        mixed $json,
+        string $type,
+        bool $isNewSubscription,
+        bool $isCancelled,
+        bool $isPaymentFailed,
+        bool $isPaymentSucceeded,
+        bool $isUpdated,
+        SubscriptionStatus $status,
+        ?Carbon $currentPeriodEnd,
+        ?Carbon $cancelledAt
+    ) {
+
+        $event = new StripeEvent(
+            $json['object']['id'],
+            $type,
+            $json['object'],
+            $json['object']['metadata']
+        );
+
+        $subscription = SubscriptionMapper::fromStripeEvent($event);
+
+        expect($subscription)->toBeInstanceOf(Subscription::class)
+            ->and($subscription)->toHaveProperties([
+                'gatewayName',
+                'status',
+                'gatewayCustomerId',
+                'gatewaySubscriptionId',
+                'currentPeriodEnd',
+                'cancelledAt',
+                'trialEndsAt',
+                'description',
+                'isNewSubscription',
+                'isCancelled',
+                'isPaymentFailed',
+                'isPaymentSucceeded',
+                'isUpdated',
+                'userId',
+                'planId',
+            ])
+            ->and($subscription->toArray())->toMatchArray([
+                'gatewayData' => [
+                    'gatewayName' => 'stripe',
+                    'gatewayCustomerId' => $json['object']['customer'],
+                    'gatewaySubscriptionId' => null,
+                    'currentPeriodEnd' => $currentPeriodEnd,
+                    'cancelledAt' => $cancelledAt,
+                    'trialEndsAt' => null,
+                    'description' => [],
+                    'isNewSubscription' => $isNewSubscription,
+                    'isCancelled' => $isCancelled,
+                    'isPaymentFailed' => $isPaymentFailed,
+                    'isPaymentSucceeded' => $isPaymentSucceeded,
+                    'isUpdated' => $isUpdated,
+                ],
+                'modelData' => [
+                    'userId' => null,
+                    'planId' => null,
+                    'status' => $status->value,
+                ],
+            ]);
+    })->with([
+        [
+            getFromInvoicePaymentSucceeded(), 'invoice.payment_succeeded', false, false, false, true, false,
+            SubscriptionStatus::ACTIVE, Carbon::createFromTimestamp(1781454271), null,
+        ],
+        [
+            getFromInvoicePaymentFailed(), 'invoice.payment_failed', false, false, true, false, false,
+            SubscriptionStatus::PAST_DUE, null, null,
+        ],
+    ]);

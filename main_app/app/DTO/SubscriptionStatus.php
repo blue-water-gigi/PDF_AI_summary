@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO;
 
 enum SubscriptionStatus: string
@@ -9,10 +11,9 @@ enum SubscriptionStatus: string
     case TRIALING = 'trialing';
     case ACTIVE = 'active';
     case PAST_DUE = 'past_due';
-    case CANCELLED = 'cancelled';
+    case CANCELED = 'canceled';
     case UNPAID = 'unpaid';
     case PAUSED = 'paused';
-
 
     /**
      * Resolve stripe status enum case.
@@ -20,9 +21,6 @@ enum SubscriptionStatus: string
      * Reason why we don't use ::tryFrom() directly is that
      * this enum class can expand with various cases.
      * So we don't need to loop over them ALL for just stripe status resolving.
-     *
-     * @param  string  $status
-     * @return self|null
      */
     public static function mapStripeStatus(string $status): ?self
     {
@@ -33,6 +31,7 @@ enum SubscriptionStatus: string
                 return $case;
             }
         }
+
         return null;
     }
 
@@ -44,10 +43,9 @@ enum SubscriptionStatus: string
             self::TRIALING,
             self::ACTIVE,
             self::PAST_DUE,
-            self::CANCELLED,
+            self::CANCELED,
             self::UNPAID,
             self::PAUSED,
         ];
     }
 }
-

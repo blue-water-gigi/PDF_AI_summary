@@ -8,6 +8,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Override;
 
 class ChangePlanRequest extends FormRequest
 {
@@ -39,6 +40,7 @@ class ChangePlanRequest extends FormRequest
         ];
     }
 
+    #[Override]
     public function messages(): array
     {
         return [
