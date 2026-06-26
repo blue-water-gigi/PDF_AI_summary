@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\DTO\Subscription;
+use App\Events\SubscriptionActivated;
+use App\Events\SubscriptionCancelled;
+use App\Events\SubscriptionUpdated;
 use App\Exceptions\SubscriptionModelException;
 use App\Models\Subscription as SubscriptionModel;
 use App\Models\User;
@@ -20,7 +23,8 @@ readonly class SubscriptionWebhookService
      */
     public function __construct(
         private UserRepository $userRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws ModelNotFoundException
@@ -37,7 +41,7 @@ readonly class SubscriptionWebhookService
 
             // For new subscriptions, create directly without requiring existing subscription
             if ($dto->isNewSubscription) {
-                SubscriptionModel::query()->updateOrCreate(
+                $sub = SubscriptionModel::query()->updateOrCreate(
                     [
                         'gateway_customer_id' => $dto->gatewayCustomerId,
                         'gateway' => $dto->gatewayName,
@@ -49,6 +53,7 @@ readonly class SubscriptionWebhookService
                         'status' => $dto->status,
                     ]);
 
+                SubscriptionActivated::dispatch($user, $sub);
                 return;
             }
 
@@ -64,6 +69,7 @@ readonly class SubscriptionWebhookService
                     'cancelled_at' => $dto->cancelledAt,
                 ]);
 
+                SubscriptionCancelled::dispatch($user, $subscription);
                 return;
             }
 
@@ -97,11 +103,15 @@ readonly class SubscriptionWebhookService
                     'current_period_end' => $dto->currentPeriodEnd,
                     'status' => $dto->status,
                 ]);
+
+                SubscriptionUpdated::dispatch($user, $subscription);
             }
         });
     }
 
-    public function syncWithYoomoney(Subscription $dto): void {}
+    public function syncWithYoomoney(Subscription $dto): void
+    {
+    }
 
     /**
      * @throws SubscriptionModelException
