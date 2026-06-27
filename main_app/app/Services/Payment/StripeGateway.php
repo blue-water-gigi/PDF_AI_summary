@@ -22,7 +22,9 @@ readonly class StripeGateway implements PaymentGatewayInterface
     /**
      * Create a new class instance.
      */
-    public function __construct(private StripeClient $stripeClient) {}
+    public function __construct(private StripeClient $stripeClient)
+    {
+    }
     /**
      * Create or retrieve price id for subscription.
      *
@@ -128,15 +130,21 @@ readonly class StripeGateway implements PaymentGatewayInterface
     public function createOrRetrieveCustomer(User $user, ?string $stripeToken = null): string
     {
         try {
-            if (! $user->subscription?->gateway_customer_id) {
-                $customer = $this->stripeClient->customers->create([
+            if (!$user->subscription?->gateway_customer_id) {
+                $customerData = [
                     'name' => $user->name,
                     'email' => $user->email,
-                    'source' => $stripeToken,
                     'metadata' => [
                         'user_id' => $user->id,
                     ],
-                ]);
+                ];
+
+                // Only include the source when a non-empty token is provided.
+                if (!is_null($stripeToken) && $stripeToken !== '') {
+                    $customerData['source'] = $stripeToken;
+                }
+
+                $customer = $this->stripeClient->customers->create($customerData);
             } else {
                 $customer = $this->stripeClient->customers->retrieve($user->subscription->gateway_customer_id);
             }
@@ -230,7 +238,7 @@ readonly class StripeGateway implements PaymentGatewayInterface
             'gateway_subscription_id' => $subscriptionId,
             'gateway_customer_id' => $customerId,
             'current_period_end' => $endsAt,
-        ], fn (string|CarbonInterface|null $value) => ! is_null($value));
+        ], fn(string|CarbonInterface|null $value) => !is_null($value));
     }
 
     public function getGatewayName(): string
@@ -313,7 +321,12 @@ readonly class StripeGateway implements PaymentGatewayInterface
     public function createCheckoutSession(User $user, Plan $plan): ?string
     {
         try {
-            $checkoutSession = $this->stripeClient->checkout->sessions->create([
+            $metadata = [
+                'plan_id' => (string) $plan->id,
+                'user_id' => (string) $user->id,
+            ];
+
+            $sessionData = [
                 //                'payment_method_types' => ['card', 'crypto', 'customer_balance', 'paypal'],
                 'line_items' => [
                     [
@@ -332,24 +345,28 @@ readonly class StripeGateway implements PaymentGatewayInterface
                         'quantity' => 1,
                     ],
                 ],
-                'customer' => $user->subscription?->gateway_customer_id,
                 'client_reference_id' => $user->id,
                 'mode' => 'subscription',
-                'success_url' => route('subscription.success').'?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('checkout', [
-                    'slug' => $plan->slug,
-                ]),
-                'metadata' => [
-                    'plan_id' => $plan->id,
-                    'user_id' => $user->id,
+                'success_url' => route('dashboard').'?checkout=success&session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => route('home').'#choose-plan',
+                'metadata' => $metadata,
+                'subscription_data' => [
+                    'metadata' => $metadata,
                 ],
-            ]);
+            ];
+
+            if ($user->subscription?->gateway_customer_id) {
+                $sessionData['customer'] = $user->subscription->gateway_customer_id;
+            }
+
+            $checkoutSession = $this->stripeClient->checkout->sessions->create($sessionData);
 
             return $checkoutSession->url;
         } catch (ApiErrorException $e) {
             Log::error('Stripe Api error creating payment session: '.$e->getMessage());
 
-            throw new PaymentSessionException('stripe', 'Stripe Api error creating payment session: '.$e->getMessage(), 500, $e);
+            throw new PaymentSessionException('stripe', 'Stripe Api error creating payment session: '.$e->getMessage(),
+                500, $e);
         }
     }
 }

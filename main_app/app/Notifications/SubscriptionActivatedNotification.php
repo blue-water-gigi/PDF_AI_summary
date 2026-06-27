@@ -34,7 +34,7 @@ class SubscriptionActivatedNotification extends Notification
             'message' => 'Your subscription has been activated.',
             'plan_id' => $this->subscription->plan_id,
             'gateway' => $this->subscription->gateway,
-            'activated_at' => $this->subscription->current_period_end->toDateTimeString(),
+            'activated_at' => $this->subscription->current_period_end?->toDateTimeString(),
         ];
     }
 }

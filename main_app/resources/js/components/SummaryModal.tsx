@@ -125,7 +125,7 @@ export default function SummaryModal({ show, summary, fileName, onClose, onNewUp
                     <div ref={summaryRef} className="border-border bg-card rounded-lg border p-6">
                         <h3 className="mb-4 text-base font-semibold">Summary</h3>
                         {summary.split('\n\n').map((p, i) => (
-                            <p key={i} className="text-muted-foreground mb-4 last:mb-0 leading-relaxed">
+                            <p key={i} className="text-muted-foreground mb-4 leading-relaxed last:mb-0">
                                 {p}
                             </p>
                         ))}
@@ -153,13 +153,7 @@ export default function SummaryModal({ show, summary, fileName, onClose, onNewUp
                             Download TXT
                         </Button>
 
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleExportPDF}
-                            disabled={exporting}
-                            aria-label="Export summary as PDF"
-                        >
+                        <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={exporting} aria-label="Export summary as PDF">
                             {exporting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                             {exporting ? 'Exporting...' : 'Export PDF'}
                         </Button>

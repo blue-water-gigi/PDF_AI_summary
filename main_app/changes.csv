@@ -1,0 +1,11 @@
+1. Dashboard route switched to SubscriptionController::dashboard so the Inertia dashboard receives current plan and PDF usage stats.
+2. Welcome pricing upgrade buttons now submit the selected paid plan to subscription.store with the Stripe gateway, which redirects users to Stripe Checkout.
+3. Stripe Checkout session URLs now use existing dashboard/home routes and pass user_id/plan_id into subscription_data metadata for webhook processing.
+4. PDF upload UI was removed from the welcome page and reused on the dashboard through PdfUploadCard.
+5. Starter-kit Repository/Documentation navigation links were removed, and Laravel Starter Kit branding was replaced with PDF Summarizer branding and a custom PDF logo.
+6. Inertia Blade view now loads only resources/js/app.tsx so dynamic page chunks resolve from the Vite manifest correctly.
+7. SubscriptionService now creates the expected incomplete Stripe checkout record with gateway_customer_id before redirect; real subscription data remains webhook-owned.
+8. Subscription activation notification now handles a pending current_period_end safely while webhook payment events remain responsible for period data.
+9. Webhook signature passing was made more robust by forwarding Stripe-Signature explicitly and ignoring null header aliases.
+10. Home page Inertia page resolution was made eager so the welcome pricing page renders without relying on a delayed page chunk.
+11. Dashboard now receives active plans and shows a Stripe upgrade button for the next available paid plan.

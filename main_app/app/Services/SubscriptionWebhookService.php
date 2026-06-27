@@ -50,6 +50,7 @@ readonly class SubscriptionWebhookService
                         'user_id' => $dto->userId,
                         'plan_id' => $dto->planId,
                         'gateway_subscription_id' => $dto->gatewaySubscriptionId,
+                        'current_period_end' => $dto->currentPeriodEnd,
                         'status' => $dto->status,
                     ]);
 

@@ -40,7 +40,11 @@ readonly class Webhook
         // lookup to be robust in both unit tests and real HTTP requests.
         foreach ($this->headers as $key => $value) {
             if (strtolower((string) $key) === strtolower($headerKey)) {
-                return is_array($value) ? ($value[0] ?? null) : $value;
+                $signature = is_array($value) ? ($value[0] ?? null) : $value;
+
+                if ($signature !== null) {
+                    return $signature;
+                }
             }
         }
 

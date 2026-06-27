@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\PaymentGatewayInterface;
+use App\DTO\SubscriptionStatus;
 use App\Exceptions\Payment\SubscriptionException;
 use App\Models\Plan;
+use App\Models\Subscription as SubscriptionModel;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -16,7 +18,9 @@ readonly class SubscriptionService
     /**
      * Create a new class instance.
      */
-    public function __construct(private PaymentGatewayInterface $paymentGateway) {}
+    public function __construct(private PaymentGatewayInterface $paymentGateway)
+    {
+    }
 
     /**
      * Subscribe user to a certain plan
@@ -34,12 +38,22 @@ readonly class SubscriptionService
             }
             $customerId = $this->paymentGateway->createOrRetrieveCustomer($user);
 
-            $user->updateOrFail([
-                ...$this->paymentGateway->setSubscriptionData(
-                    customerId: $customerId,
-                ),
-            ]);
-            $user->refresh();
+            SubscriptionModel::query()->updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'gateway' => $this->paymentGateway->getGatewayName(),
+                ],
+                [
+                    'plan_id' => $plan->id,
+                    ...$this->paymentGateway->setSubscriptionData(
+                        subscriptionId: 'checkout_pending_'.$user->id,
+                        customerId: $customerId,
+                    ),
+                    'status' => SubscriptionStatus::INCOMPLETE,
+                ]
+            );
+
+            $user->load('subscription');
 
             return $this->paymentGateway->createCheckoutSession($user, $plan);
         } catch (Throwable $th) {
@@ -67,7 +81,7 @@ readonly class SubscriptionService
     public function cancel(User $user): void
     {
         try {
-            if (! $user->hasActiveSub()) {
+            if (!$user->hasActiveSub()) {
                 throw new SubscriptionException(
                     $this->paymentGateway->getGatewayName(),
                     'No active subscription found.',
@@ -98,7 +112,7 @@ readonly class SubscriptionService
     public function changePlan(User $user, Plan $newPlan): void
     {
         try {
-            if (! $user->hasActiveSub()) {
+            if (!$user->hasActiveSub()) {
                 throw new SubscriptionException(
                     $this->paymentGateway->getGatewayName(),
                     'No active subscription found.',

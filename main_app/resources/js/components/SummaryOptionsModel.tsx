@@ -129,9 +129,7 @@ export default function SummaryOptionsModal({ show, fileName, userPlanSlug, onCl
                                         </div>
                                         <CardTitle className="text-base">{option.title}</CardTitle>
                                         <CardDescription>{option.description}</CardDescription>
-                                        {isLocked && (
-                                            <p className="text-muted-foreground pt-1 text-xs font-medium">Upgrade to unlock</p>
-                                        )}
+                                        {isLocked && <p className="text-muted-foreground pt-1 text-xs font-medium">Upgrade to unlock</p>}
                                     </CardHeader>
                                 </Card>
                             </button>

@@ -7,12 +7,11 @@ use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', [SubscriptionController::class, 'index'])->name('home');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', fn () => Inertia::render('dashboard'))
+    Route::get('dashboard', [SubscriptionController::class, 'dashboard'])
         ->name('dashboard');
     Route::post('/subscription', [SubscriptionController::class, 'store'])
         ->name('subscription.store');

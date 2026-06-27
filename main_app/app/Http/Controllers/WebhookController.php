@@ -31,7 +31,10 @@ class WebhookController extends Controller
             $request->all(),
             $platform,
             $request->getContent(),
-            $request->headers->all()
+            [
+                ...$request->headers->all(),
+                'Stripe-Signature' => $request->header('Stripe-Signature') ?? $request->server('HTTP_STRIPE_SIGNATURE'),
+            ]
         );
 
         try {
