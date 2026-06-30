@@ -1,9 +1,20 @@
+import ChangePlanDialog from '@/components/change-plan-dialog';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { CreditCardIcon, LayoutGrid, RefreshCwIcon } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -15,6 +26,8 @@ const mainNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const page = usePage();
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -31,6 +44,30 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+
+                <SidebarGroup className="px-2 py-0">
+                    <SidebarGroupLabel>Subscription</SidebarGroupLabel>
+                    <SidebarMenu>
+                        <SidebarMenuItem>
+                            <ChangePlanDialog
+                                trigger={
+                                    <SidebarMenuButton tooltip="Change plan">
+                                        <RefreshCwIcon />
+                                        <span>Change plan</span>
+                                    </SidebarMenuButton>
+                                }
+                            />
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={page.url.startsWith('/settings/subscription')} tooltip="Manage subscription">
+                                <Link href="/settings/subscription" prefetch>
+                                    <CreditCardIcon />
+                                    <span>Manage subscription</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
+                </SidebarGroup>
             </SidebarContent>
 
             <SidebarFooter>

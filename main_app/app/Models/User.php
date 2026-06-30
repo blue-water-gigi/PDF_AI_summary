@@ -64,8 +64,8 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::creating(function ($user) {
-            if (! $user->plan_id) {
-                $basicPlan = once(fn () => Plan::where('slug', 'basic')->first());
+            if (!$user->plan_id) {
+                $basicPlan = once(fn() => Plan::where('slug', 'basic')->first());
                 if ($basicPlan) {
                     $user->plan_id = $basicPlan->id;
                     $user->pdf_count = 0;
@@ -92,7 +92,7 @@ class User extends Authenticatable
 
     public function canSummarizePdf(): bool
     {
-        if (! $this->plan_id) {
+        if (!$this->plan_id) {
             return false;
         }
 
@@ -118,12 +118,19 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function increasePdfCount(int|float $amount = 1): void
+    {
+        $this->increment('pdf_count', $amount);
+    }
+
     /**
      * Check if user have stripe subscription
      */
     public function hasActiveSub(): bool
     {
         return $this->subscription?->status === SubscriptionStatus::ACTIVE
-            && $this->subscription?->current_period_end->isFuture();
+            && $this->subscription?->current_period_end?->isFuture() === true;
     }
 }
+
+

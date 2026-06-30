@@ -1,0 +1,6 @@
+1. Added SubscriptionViewMapper to centralize frontend plan, usage, and subscription view data.
+2. Updated SubscriptionController to reuse SubscriptionViewMapper for the welcome, dashboard, and subscription settings pages.
+3. Added the authenticated subscription settings route and page data endpoint.
+4. Shared current subscription data through Inertia middleware for sidebar controls.
+5. Hardened active subscription checks against missing period dates and fixed the change-plan validation message key.
+

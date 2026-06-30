@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -18,4 +19,5 @@ Route::middleware('auth')->group(function () {
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
 
     Route::get('settings/appearance', fn () => Inertia::render('settings/appearance'))->name('appearance');
+    Route::get('settings/subscription', [SubscriptionController::class, 'settings'])->name('subscription.settings');
 });

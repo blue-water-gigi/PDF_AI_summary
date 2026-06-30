@@ -37,7 +37,7 @@ readonly class SubscriptionWebhookService
             // For new subscriptions, use userId from DTO; otherwise find by gateway_customer_id
             $user = $dto->userId
                 ? $this->userRepository->findById($dto->userId)
-                : $this->userRepository->findByGatewayCustomerId($dto->gatewayCustomerId);
+                : $this->userRepository->findByGatewayCustomerId($dto?->gatewayCustomerId);
 
             // For new subscriptions, create directly without requiring existing subscription
             if ($dto->isNewSubscription) {

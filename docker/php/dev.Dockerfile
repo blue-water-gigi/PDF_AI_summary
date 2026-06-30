@@ -33,6 +33,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-EXPOSE 9000
+# Install npm dependencies
+COPY main_app/package.json main_app/package-lock.json* ./
+RUN npm install
+
+EXPOSE 9000 5173
 
 CMD ["php-fpm", "-F"]

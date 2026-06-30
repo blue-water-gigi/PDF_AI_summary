@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Mappers\SubscriptionViewMapper;
+use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -42,14 +44,18 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
+        $user = $request->user();
 
-        return array_merge(parent::share($request), [
+        return [
             ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim((string) $message), 'author' => trim((string) $author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
-        ]);
+            'subscriptionData' => fn (): ?array => $user instanceof User
+                ? app(SubscriptionViewMapper::class)->sharedProps($user)
+                : null,
+        ];
     }
 }

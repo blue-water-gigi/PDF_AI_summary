@@ -44,7 +44,8 @@ class ChangePlanRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'plan_id.notIn' => 'The chosen plan is the same as your current plan.',
+            'new_plan_id.notIn' => 'The chosen plan is the same as your current plan.',
         ];
     }
 }
+

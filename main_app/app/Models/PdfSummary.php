@@ -17,7 +17,7 @@ class PdfSummary extends Model
         'user_id',
         'filename',
         'summary',
-        'filesize',
+        'file_size',
     ];
 
     public function user(): BelongsTo

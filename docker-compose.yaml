@@ -15,8 +15,8 @@ services:
 
   php:
     build:
-      context: ./docker/php
-      dockerfile: dev.Dockerfile
+      context: .
+      dockerfile: /docker/php/dev.Dockerfile
     container_name: app_php
     ports:
       - "5173:5173"
@@ -57,7 +57,7 @@ services:
     env_file:
       - ./main_app/.env
     environment:
-      STRIPE_API_KEY: "${STRIPE_SECRET}"
+#      STRIPE_API_KEY: "${STRIPE_SECRET}"
       STRIPE_DEVICE_NAME: docker_dev
     networks:
       - app_network

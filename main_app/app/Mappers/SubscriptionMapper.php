@@ -18,15 +18,15 @@ class SubscriptionMapper
         $metadata = $event->getMetadata();
 
         return match ($event->getType()) {
-            //            StripeEventType::PaymentIntentSucceeded->value => new Subscription(
-            //                gatewayName: 'stripe',
-            //                gatewayCustomerId: $data['customer'],
-            //            ),
-            //            StripeEventType::PaymentIntentPaymentFailed->value => new Subscription(
-            //                gatewayName: 'stripe',
-            //                gatewayCustomerId: $data['customer'],
-            //                description: $data['cancellation_reason'],
-            //            ),
+            StripeEventType::PaymentIntentSucceeded->value => new Subscription(
+                gatewayName: 'stripe',
+                gatewayCustomerId: $data['customer'],
+            ),
+            StripeEventType::PaymentIntentPaymentFailed->value => new Subscription(
+                gatewayName: 'stripe',
+                gatewayCustomerId: $data['customer'],
+                description: $data['cancellation_reason'],
+            ),
             //            StripeEventType::PaymentIntentRequiresAction->value => new Subscription(
             //                gatewayName: 'stripe',
             //                gatewayCustomerId: $data['customer'],
@@ -34,31 +34,31 @@ class SubscriptionMapper
             //            ),
 
             StripeEventType::CustomerSubscriptionCreated->value => new Subscription(
-                userId: (int) $metadata['user_id'],
+                userId: (int)$metadata['user_id'],
                 gatewayName: 'stripe',
                 gatewayCustomerId: $data['customer'],
                 gatewaySubscriptionId: $data['id'],
                 status: SubscriptionStatus::mapStripeStatus($data['status']),
-                planId: (int) $metadata['plan_id'],
+                planId: (int)$metadata['plan_id'],
                 isNewSubscription: true,
             ),
             StripeEventType::CustomerSubscriptionUpdated->value => new Subscription(
-                userId: (int) $metadata['user_id'],
+                userId: (int)$metadata['user_id'],
                 gatewayName: 'stripe',
                 gatewayCustomerId: $data['customer'],
                 gatewaySubscriptionId: $data['id'],
                 status: SubscriptionStatus::mapStripeStatus($data['status']),
-                planId: (int) $metadata['plan_id'],
+                planId: (int)$metadata['plan_id'],
                 currentPeriodEnd: Carbon::createFromTimestamp($data['items']['data'][0]['current_period_end']),
                 isUpdated: true,
             ),
             StripeEventType::CustomerSubscriptionDeleted->value => new Subscription(
-                userId: (int) $metadata['user_id'],
+                userId: (int)$metadata['user_id'],
                 gatewayName: 'stripe',
                 gatewayCustomerId: $data['customer'],
                 gatewaySubscriptionId: $data['id'],
                 status: SubscriptionStatus::mapStripeStatus($data['status']),
-                planId: (int) $metadata['plan_id'],
+                planId: (int)$metadata['plan_id'],
                 cancelledAt: Carbon::createFromTimestamp($data['canceled_at']),
                 isCancelled: true,
             ),
