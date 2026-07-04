@@ -29,5 +29,7 @@ class UserSeeder extends Seeder
             'pdf_count' => 2,
             'pdf_count_resets_at' => now()->addMonth(),
         ]);
+
+        User::factory(30)->create();
     }
 }

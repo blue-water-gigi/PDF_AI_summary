@@ -35,12 +35,15 @@ export interface UserStats {
     pdfCount: number;
     pdfLimit: number;
     canUpload: boolean;
+    pdfResetDate?: string | null;
+    daysUntilPdfReset?: number | null;
 }
 
 export interface SubscriptionDetails {
     gateway: string;
     status: string;
     currentPeriodEnd?: string | null;
+    daysUntilRenewal?: number | null;
     cancelledAt?: string | null;
     trialEndsAt?: string | null;
     isActive: boolean;
@@ -66,6 +69,10 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
+    role?: 'admin' | 'user';
+    plan_id?: number | null;
+    pdf_count?: number;
+    pdf_count_resets_at?: string | null;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;

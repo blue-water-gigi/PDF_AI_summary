@@ -5,7 +5,7 @@ use App\Exceptions\SubscriptionModelException;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Repositories\UserRepository;
-use App\Services\SubscriptionWebhookService;
+use App\Services\Subscription\SubscriptionWebhookService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;

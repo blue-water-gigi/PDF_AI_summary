@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Subscription;
 
 use App\DTO\Subscription;
 use App\Events\SubscriptionActivated;
@@ -23,7 +23,8 @@ readonly class SubscriptionWebhookService
      */
     public function __construct(
         private UserRepository $userRepository,
-    ) {
+    )
+    {
     }
 
     /**
@@ -59,9 +60,9 @@ readonly class SubscriptionWebhookService
             }
 
             // For existing subscriptions, fetch the subscription record
-            $subscription = $this->getSubscriptionOrFail(
+            $subscription = $this->getSubscriptionForPayment(
                 $user,
-                $dto->gatewayName,
+                $dto,
             );
 
             if ($dto->isCancelled) {
@@ -84,11 +85,13 @@ readonly class SubscriptionWebhookService
 
             if ($dto->isPaymentSucceeded) {
                 $subscription->update([
+                    'gateway_subscription_id' => $dto->gatewaySubscriptionId,
                     'status' => $dto->status,
                     'current_period_end' => $dto->currentPeriodEnd,
                 ]);
 
                 $user->update([
+                    'plan_id' => $subscription->plan_id,
                     'pdf_count' => 0,
                     'pdf_count_resets_at' => $dto->currentPeriodEnd,
                 ]);
@@ -103,6 +106,12 @@ readonly class SubscriptionWebhookService
                     'gateway_subscription_id' => $dto->gatewaySubscriptionId,
                     'current_period_end' => $dto->currentPeriodEnd,
                     'status' => $dto->status,
+                ]);
+
+                $user->update([
+                    'plan_id' => $subscription->plan_id,
+                    'pdf_count' => 0,
+                    'pdf_count_resets_at' => $dto->currentPeriodEnd,
                 ]);
 
                 SubscriptionUpdated::dispatch($user, $subscription);
@@ -123,5 +132,19 @@ readonly class SubscriptionWebhookService
             $gatewayName,
             "No subscription record found for user {$user->id}"
         );
+    }
+
+    /**
+     * @throws SubscriptionModelException
+     */
+    protected function getSubscriptionForPayment(User $user, Subscription $dto): SubscriptionModel
+    {
+        return SubscriptionModel::query()
+            ->where('user_id', $user->id)
+            ->where('gateway', $dto->gatewayName)
+            ->when($dto->gatewaySubscriptionId, function ($query) use ($dto) {
+                $query->where('gateway_subscription_id', $dto->gatewaySubscriptionId);
+            })
+            ->first() ?? $this->getSubscriptionOrFail($user, $dto->gatewayName);
     }
 }

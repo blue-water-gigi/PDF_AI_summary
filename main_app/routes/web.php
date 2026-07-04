@@ -20,11 +20,16 @@ Route::middleware(['auth'])->group(function () {
         ->name('subscription.destroy');
     Route::patch('/subscription', [SubscriptionController::class, 'update'])
         ->name('subscription.update');
+
+    Route::post('/pdf/summarize', [PdfController::class, 'summarize'])->name('pdf.summarize');
+    Route::get('/dashboard/history', [PdfController::class, 'index'])->name('dashboard.index');
+
+    Route::get('users', [AdminController::class, 'index'])->name('admin.index');
+    Route::post('users/{user}/plan', [AdminController::class, 'updateUserPlan'])->name('admin.users.update-plan');
 });
 
 Route::middleware(['auth'])->prefix('admin')->group(function () {
-    Route::get('dashboard', [AdminController::class, 'users'])->name('admin.users');
-    Route::post('dashboard/users/{user}/plan', [AdminController::class, 'updateUserPlan'])->name('admin.users.update-plan');
+    Route::redirect('dashboard/users', '/users');
 });
 
 Route::post('/webhook/{platform}', WebhookController::class)
@@ -32,7 +37,6 @@ Route::post('/webhook/{platform}', WebhookController::class)
     ->whereIn('platform', config('payment.available_gateways'))
     ->withoutMiddleware([VerifyCsrfToken::class]);
 
-Route::post('/pdf/summarize', [PdfController::class, 'summarize'])->name('summarize');
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

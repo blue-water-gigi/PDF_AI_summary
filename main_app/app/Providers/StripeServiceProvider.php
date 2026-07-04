@@ -32,7 +32,7 @@ class StripeServiceProvider extends ServiceProvider
     public function register(): void
     {
         // client
-        $this->app->singletonIf(StripeClient::class, fn () => new StripeClient(
+        $this->app->singletonIf(StripeClient::class, fn() => new StripeClient(
             config('services.stripe.secret'),
         ));
 
@@ -50,7 +50,7 @@ class StripeServiceProvider extends ServiceProvider
             PaymentIntentRequiresActionHandler::class,
         ], StripeEventsHandlerInterface::class);
 
-        $this->app->bind(StripeEventRouter::class, fn (Application $app): StripeEventRouter => new StripeEventRouter(
+        $this->app->bind(StripeEventRouter::class, fn(Application $app): StripeEventRouter => new StripeEventRouter(
             $app->tagged(StripeEventsHandlerInterface::class),
             $app->make(WebhookEventRepository::class)
         ));

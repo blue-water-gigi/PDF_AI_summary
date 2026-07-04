@@ -41,6 +41,7 @@ export default function ChangePlanDialog({ trigger, plans, currentPlanSlug, hasA
     const availablePlans = plans ?? subscriptionData?.plans ?? [];
     const activePlanSlug = currentPlanSlug ?? subscriptionData?.currentPlanSlug ?? 'basic';
     const hasSubscription = hasActiveSubscription ?? subscriptionData?.hasActiveSubscription ?? false;
+    const visiblePlans = hasSubscription ? availablePlans.filter((plan) => plan.price > 0) : availablePlans;
 
     const selectPlan = (plan: Plan) => {
         if (plan.slug === activePlanSlug) {
@@ -89,7 +90,7 @@ export default function ChangePlanDialog({ trigger, plans, currentPlanSlug, hasA
                 </DialogHeader>
 
                 <div className="grid gap-3 md:grid-cols-3">
-                    {availablePlans.map((plan) => {
+                    {visiblePlans.map((plan) => {
                         const isCurrentPlan = plan.slug === activePlanSlug;
                         const canSelect = !isCurrentPlan && (hasSubscription || plan.price > 0);
 

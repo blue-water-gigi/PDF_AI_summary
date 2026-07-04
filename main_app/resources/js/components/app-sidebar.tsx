@@ -12,9 +12,9 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
+import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { CreditCardIcon, LayoutGrid, RefreshCwIcon } from 'lucide-react';
+import { CreditCardIcon, HistoryIcon, LayoutGrid, RefreshCwIcon, ShieldCheckIcon } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -23,10 +23,16 @@ const mainNavItems: NavItem[] = [
         url: '/dashboard',
         icon: LayoutGrid,
     },
+    {
+        title: 'History',
+        url: '/dashboard/history',
+        icon: HistoryIcon,
+    },
 ];
 
 export function AppSidebar() {
-    const page = usePage();
+    const page = usePage<SharedData>();
+    const isAdmin = page.props.auth.user.role === 'admin';
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -44,6 +50,22 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+
+                {isAdmin ? (
+                    <SidebarGroup className="px-2 py-0">
+                        <SidebarGroupLabel>Admin panel</SidebarGroupLabel>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild isActive={page.url.startsWith('/users')} tooltip="Manage users">
+                                    <Link href="/users" prefetch>
+                                        <ShieldCheckIcon />
+                                        <span>Manage</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroup>
+                ) : null}
 
                 <SidebarGroup className="px-2 py-0">
                     <SidebarGroupLabel>Subscription</SidebarGroupLabel>

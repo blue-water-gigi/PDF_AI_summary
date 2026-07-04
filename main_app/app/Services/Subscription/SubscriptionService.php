@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Subscription;
 
 use App\Contracts\PaymentGatewayInterface;
 use App\DTO\SubscriptionStatus;
@@ -29,13 +29,15 @@ readonly class SubscriptionService
      */
     public function subscribe(User $user, Plan $plan): ?string
     {
+
+        if ($user->hasActiveSub()) {
+            throw new SubscriptionException(
+                $this->paymentGateway->getGatewayName(),
+                'User already subscribed.',
+            );
+        }
+
         try {
-            if ($user->hasActiveSub()) {
-                throw new SubscriptionException(
-                    $this->paymentGateway->getGatewayName(),
-                    'User already subscribed.',
-                );
-            }
             $customerId = $this->paymentGateway->createOrRetrieveCustomer($user);
 
             SubscriptionModel::query()->updateOrCreate(
@@ -46,7 +48,7 @@ readonly class SubscriptionService
                 [
                     'plan_id' => $plan->id,
                     ...$this->paymentGateway->setSubscriptionData(
-                        subscriptionId: 'checkout_pending_'.$user->id,
+                        subscriptionId: 'checkout_pending_' . $user->id,
                         customerId: $customerId,
                     ),
                     'status' => SubscriptionStatus::INCOMPLETE,
@@ -81,6 +83,8 @@ readonly class SubscriptionService
     public function cancel(User $user): void
     {
         try {
+            $user->loadMissing('subscription');
+
             if (!$user->hasActiveSub()) {
                 throw new SubscriptionException(
                     $this->paymentGateway->getGatewayName(),
@@ -89,8 +93,7 @@ readonly class SubscriptionService
             }
             $subscriptionId = $this->paymentGateway->getSubscriptionId($user);
 
-            $this->paymentGateway->cancelSubscription($subscriptionId);
-
+            $this->paymentGateway->cancelSubscription($subscriptionId, $user);
         } catch (Throwable $th) {
             Log::error('Error canceling subscription', [
                 'gateway' => $this->paymentGateway->getGatewayName(),
@@ -112,6 +115,8 @@ readonly class SubscriptionService
     public function changePlan(User $user, Plan $newPlan): void
     {
         try {
+            $user->loadMissing('subscription');
+
             if (!$user->hasActiveSub()) {
                 throw new SubscriptionException(
                     $this->paymentGateway->getGatewayName(),
@@ -120,8 +125,7 @@ readonly class SubscriptionService
             }
             $subscriptionId = $this->paymentGateway->getSubscriptionId($user);
 
-            $this->paymentGateway->changePlan($subscriptionId, $newPlan);
-
+            $this->paymentGateway->changePlan($subscriptionId, $newPlan, $user);
         } catch (Throwable $th) {
             Log::error('Error changing plan', [
                 'gateway' => $this->paymentGateway->getGatewayName(),

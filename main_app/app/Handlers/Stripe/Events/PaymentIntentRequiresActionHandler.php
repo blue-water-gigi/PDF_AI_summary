@@ -7,7 +7,7 @@ namespace App\Handlers\Stripe\Events;
 use App\Contracts\Stripe\StripeEventsHandlerInterface;
 use App\DTO\Stripe\StripeEvent;
 use App\Mappers\SubscriptionMapper;
-use App\Services\SubscriptionWebhookService;
+use App\Services\Subscription\SubscriptionWebhookService;
 use Throwable;
 
 readonly class PaymentIntentRequiresActionHandler implements StripeEventsHandlerInterface

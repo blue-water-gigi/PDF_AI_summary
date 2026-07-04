@@ -8,7 +8,7 @@ use App\Handlers\Stripe\Events\CustomerSubscriptionUpdatedHandler;
 use App\Handlers\Stripe\Events\InvoicePaymentFailedHandler;
 use App\Handlers\Stripe\Events\InvoicePaymentSucceededHandler;
 use App\Handlers\Stripe\Events\StripeEventType;
-use App\Services\SubscriptionWebhookService;
+use App\Services\Subscription\SubscriptionWebhookService;
 
 test('Handlers supports their respective events',
     function (string $eventId, string $eventType, array $eventData, array $eventMetadata, array $expectations): void {

@@ -3,4 +3,24 @@
 3. Added the authenticated subscription settings route and page data endpoint.
 4. Shared current subscription data through Inertia middleware for sidebar controls.
 5. Hardened active subscription checks against missing period dates and fixed the change-plan validation message key.
+6. Synced changed subscription plans to local subscription and user records immediately after Stripe plan updates.
+7. Synced local subscription cancellation state and downgraded users to the basic plan after Stripe cancellation.
+8. Redirected subscription change and cancellation responses back to the subscription settings page.
+9. Added subscription and PDF-limit renewal countdown data to subscription view props.
+10. Removed direct local plan and cancellation synchronization from SubscriptionService so subscription state remains webhook-driven.
+11. Confirmed no schema changes or additional subscription columns are required for this correction.
+12. Added SubscriptionService regression coverage to ensure plan changes and cancellations do not mutate local subscription state directly.
+13. Preserved Stripe subscription user metadata during plan changes so webhook-driven updates can resolve repeated paid-plan switches.
+14. Rejected free plans in backend change-plan validation so Basic downgrades remain cancellation-based.
+15. Added regression coverage for rejecting Basic plan changes through the subscription update route.
+16. Preserved Stripe subscription user metadata before cancellation so deleted webhook events remain resolvable.
 
+Admin panel
+17. Added /users admin routes while keeping the old admin dashboard users URL as a redirect.
+18. Fixed admin plan update authorization to use the authenticated admin user.
+19. Updated AdminController to load users with plans and subscriptions, pass active plans to the frontend, and update user/subscription records directly for admin plan changes.
+20. Ensured admin subscription assignment creates missing subscription records with the correct user relationship.
+21. Hardened PDF reset checks for admin-loaded users that do not yet have a reset timestamp.
+
+PDF summary history
+22. Rendered PDF summary history through Inertia while preserving the existing user summary query and pagination.

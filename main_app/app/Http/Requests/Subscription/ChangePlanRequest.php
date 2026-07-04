@@ -33,7 +33,7 @@ class ChangePlanRequest extends FormRequest
             'new_plan_id' => [
                 'required',
                 'integer',
-                Rule::exists('plans', 'id'),
+                Rule::exists('plans', 'id')->where(fn ($query) => $query->where('price', '>', 0)),
                 Rule::notIn([$currentPlanId]),
             ],
             'gateway' => ['sometimes', 'string', Rule::in(['stripe', 'yoomoney'])],
@@ -44,6 +44,7 @@ class ChangePlanRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'new_plan_id.exists' => 'The chosen plan is not available for subscription changes.',
             'new_plan_id.notIn' => 'The chosen plan is the same as your current plan.',
         ];
     }

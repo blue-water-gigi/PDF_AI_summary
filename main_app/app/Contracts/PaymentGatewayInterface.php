@@ -14,9 +14,9 @@ interface PaymentGatewayInterface
 
     public function createCheckoutSession(User $user, Plan $plan): ?string;
 
-    public function cancelSubscription(string $subscriptionId): void;
+    public function cancelSubscription(string $subscriptionId, User $user): void;
 
-    public function changePlan(string $subscriptionId, Plan $plan): void;
+    public function changePlan(string $subscriptionId, Plan $plan, User $user): void;
 
     public function setSubscriptionData(
         ?string $subscriptionId = null,

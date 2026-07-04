@@ -8,6 +8,7 @@ use App\DTO\SubscriptionStatus;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
+use Carbon\CarbonInterface;
 
 readonly class SubscriptionViewMapper
 {
@@ -26,7 +27,7 @@ readonly class SubscriptionViewMapper
     }
 
     /**
-     * @return array{plans: array<int, array<string, mixed>>, currentPlanSlug: string|null, userStats: array{pdfCount: int, pdfLimit: int, canUpload: bool}}
+     * @return array<string, mixed>
      */
     public function dashboardProps(User $user): array
     {
@@ -54,7 +55,7 @@ readonly class SubscriptionViewMapper
     }
 
     /**
-     * @return array{plans: array<int, array<string, mixed>>, currentPlanSlug: string|null, userStats: array{pdfCount: int, pdfLimit: int, canUpload: bool}, hasActiveSubscription: bool}
+     * @return array<string, mixed>
      */
     public function sharedProps(User $user): array
     {
@@ -89,14 +90,18 @@ readonly class SubscriptionViewMapper
     }
 
     /**
-     * @return array{pdfCount: int, pdfLimit: int, canUpload: bool}
+     * @return array<string, mixed>
      */
     private function userStats(User $user): array
     {
+        $canUpload = $user->canSummarizePdf();
+
         return [
             'pdfCount' => $user->pdf_count,
             'pdfLimit' => $user->plan?->pdf_limit ?? 0,
-            'canUpload' => $user->canSummarizePdf(),
+            'canUpload' => $canUpload,
+            'pdfResetDate' => $user->pdf_count_resets_at?->toDateString(),
+            'daysUntilPdfReset' => $this->daysUntil($user->pdf_count_resets_at),
         ];
     }
 
@@ -113,6 +118,7 @@ readonly class SubscriptionViewMapper
             'gateway' => $subscription->gateway,
             'status' => $subscription->status instanceof SubscriptionStatus ? $subscription->status->value : (string)$subscription->status,
             'currentPeriodEnd' => $subscription->current_period_end?->toDateString(),
+            'daysUntilRenewal' => $this->daysUntil($subscription->current_period_end),
             'cancelledAt' => $subscription->cancelled_at?->toDateString(),
             'trialEndsAt' => $subscription->trial_ends_at?->toDateString(),
             'isActive' => $this->hasActiveSubscription($subscription),
@@ -123,5 +129,14 @@ readonly class SubscriptionViewMapper
     {
         return $subscription?->status === SubscriptionStatus::ACTIVE
             && $subscription?->current_period_end?->isFuture() === true;
+    }
+
+    private function daysUntil(?CarbonInterface $date): ?int
+    {
+        if (!$date instanceof CarbonInterface) {
+            return null;
+        }
+
+        return max(0, (int)now()->startOfDay()->diffInDays($date->copy()->startOfDay(), false));
     }
 }

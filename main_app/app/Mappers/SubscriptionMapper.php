@@ -65,6 +65,7 @@ class SubscriptionMapper
             StripeEventType::InvoicePaymentSucceeded->value => new Subscription(
                 gatewayName: 'stripe',
                 gatewayCustomerId: $data['customer'],
+                gatewaySubscriptionId: $data['parent']['subscription_details']['subscription'],
                 status: SubscriptionStatus::ACTIVE,
                 currentPeriodEnd: Carbon::createFromTimestamp($data['lines']['data'][0]['period']['end']),
                 isPaymentSucceeded: true,

@@ -11,7 +11,7 @@ use App\Mappers\SubscriptionViewMapper;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\Payment\PaymentGatewayFactory;
-use App\Services\SubscriptionService;
+use App\Services\Subscription\SubscriptionService;
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -110,7 +110,7 @@ class SubscriptionController extends Controller
 
             $service->changePlan($user, $newPlan);
 
-            return back()->with('success', 'Plan updated successfully.');
+            return to_route('subscription.settings')->with('success', 'Plan updated successfully.');
         } catch (Throwable $th) {
             Log::error('Error updating subscription', [
                 'message' => $th->getMessage(),
@@ -143,7 +143,7 @@ class SubscriptionController extends Controller
 
             $service->cancel($user);
 
-            return back()->with('success', 'Unsubscribed successfully.');
+            return to_route('subscription.settings')->with('success', 'Unsubscribed successfully.');
         } catch (Throwable $th) {
             Log::error('Error canceling subscription', [
                 'message' => $th->getMessage(),

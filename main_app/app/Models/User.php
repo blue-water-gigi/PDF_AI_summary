@@ -96,7 +96,7 @@ class User extends Authenticatable
             return false;
         }
 
-        if ($this->pdf_count_resets_at->isPast()) {
+        if (!$this->pdf_count_resets_at || $this->pdf_count_resets_at->isPast()) {
             $this->update([
                 'pdf_count' => 0,
                 'pdf_count_resets_at' => now()->addMonth(),
@@ -124,7 +124,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user have stripe subscription
+     * Check if user have active subscription
      */
     public function hasActiveSub(): bool
     {
