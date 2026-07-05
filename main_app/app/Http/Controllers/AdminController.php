@@ -10,6 +10,7 @@ use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -20,14 +21,35 @@ class AdminController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(): InertiaResponse
+    public function index(Request $request): InertiaResponse
     {
-        abort_if(!Auth::user()?->isAdmin(), 403);
+        abort_if(! Auth::user()?->isAdmin(), 403);
+
+        $allowedSorts = [
+            'id' => 'id',
+            'role' => 'role',
+            'plan_id' => 'plan_id',
+            'created_at' => 'created_at',
+            'updated_at' => 'updated_at',
+            'email_verified_at' => 'email_verified_at',
+            'pdf_count_resets_at' => 'pdf_count_resets_at',
+        ];
+
+        $sort = (string) $request->query('sort', '');
+        $hasActiveSort = array_key_exists($sort, $allowedSorts);
+        $requestedDirection = strtolower((string) $request->query('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $direction = $hasActiveSort ? $requestedDirection : 'desc';
+        $search = trim((string) $request->query('search', ''));
+        $sortColumn = $hasActiveSort ? $allowedSorts[$sort] : 'created_at';
 
         $users = User::query()
             ->with(['plan', 'subscription'])
             ->withCount('pdfSummaries')
-            ->orderBy('created_at', 'desc')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereRaw('LOWER(email) LIKE ?', ['%'.strtolower($search).'%']);
+            })
+            ->orderBy($sortColumn, $direction)
+            ->orderBy('id')
             ->paginate(15)
             ->withQueryString();
 
@@ -39,6 +61,11 @@ class AdminController extends Controller
         return Inertia::render('admin/users', [
             'users' => $users,
             'plans' => $plans,
+            'filters' => [
+                'search' => $search,
+                'sort' => $hasActiveSort ? $sort : null,
+                'direction' => $direction,
+            ],
         ]);
     }
 

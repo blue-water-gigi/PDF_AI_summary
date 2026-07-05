@@ -110,7 +110,7 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->pdf_count <= $this->plan->pdf_limit;
+        return $this->pdf_count < $this->plan->pdf_limit;
     }
 
     public function isAdmin(): bool

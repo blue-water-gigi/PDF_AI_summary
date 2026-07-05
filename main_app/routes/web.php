@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\WebhookController;
@@ -20,6 +21,10 @@ Route::middleware(['auth'])->group(function () {
         ->name('subscription.destroy');
     Route::patch('/subscription', [SubscriptionController::class, 'update'])
         ->name('subscription.update');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read', [NotificationController::class, 'markAllAsRead'])->name('notifications.read.all');
 
     Route::post('/pdf/summarize', [PdfController::class, 'summarize'])->name('pdf.summarize');
     Route::get('/dashboard/history', [PdfController::class, 'index'])->name('dashboard.index');

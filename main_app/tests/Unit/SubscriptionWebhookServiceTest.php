@@ -321,7 +321,7 @@ it('executes operations within transaction', function (string $gateway) {
 
     $service = app()->make(SubscriptionWebhookService::class);
 
-    expect(fn () => $gateway === 'stripe'
+    expect(fn() => $gateway === 'stripe'
         ? $service->syncWithStripe($dto)
         : $service->syncWithYoomoney($dto))
         ->toThrow(RuntimeException::class, 'Simulated failure during user update');

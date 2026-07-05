@@ -24,3 +24,9 @@ Admin panel
 
 PDF summary history
 22. Rendered PDF summary history through Inertia while preserving the existing user summary query and pagination.
+23. Added admin panel email search and controlled column sorting for users, roles, plans, and date fields.
+24. Adjusted admin user filters so sortable columns support descending, ascending, and default table ordering states.
+25. Shared unread notification counters and unread summary notification references through Inertia props.
+26. Added summary document identifiers to SummaryCreated database notifications for History read indicators.
+27. Removed the custom User notifications relation so Laravel database notifications use the Notifiable trait relation.
+28. Removed manual event listener registration from AppServiceProvider to prevent duplicate autodiscovered notification listeners.

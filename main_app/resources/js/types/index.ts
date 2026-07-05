@@ -56,11 +56,23 @@ export interface SubscriptionData {
     hasActiveSubscription: boolean;
 }
 
+export interface NotificationSummaryItem {
+    id: string;
+    summaryId: number;
+}
+
+export interface NotificationSharedData {
+    unreadCount: number;
+    unreadSummaryCount: number;
+    unreadSummaryItems: NotificationSummaryItem[];
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
     subscriptionData?: SubscriptionData | null;
+    notifications?: NotificationSharedData | null;
     [key: string]: unknown;
 }
 

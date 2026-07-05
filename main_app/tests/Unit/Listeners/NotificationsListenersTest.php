@@ -1,6 +1,7 @@
 <?php
 
 use App\DTO\SubscriptionStatus;
+use App\Models\PdfSummary;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
@@ -37,7 +38,7 @@ it('creates only one row in notifications DB', function () {
         'current_period_end' => now()->addDay(),
     ]);
 
-    $user = User::query()->find(1);
+    $user = $user->refresh();
 
     $user->notify(new \App\Notifications\SubscriptionActivatedNotification($sub));
 
@@ -75,7 +76,7 @@ it('creates creates valid row', function () {
         'current_period_end' => now()->addDay(),
     ]);
 
-    $user = User::query()->find(1);
+    $user = $user->refresh();
 
     $user->notify(new \App\Notifications\SubscriptionActivatedNotification($sub));
 
@@ -89,5 +90,25 @@ it('creates creates valid row', function () {
         'activated_at' => $sub->current_period_end->toDateTimeString(),
     ]);
 });
+it('stores summary identifiers in summary created notifications', function () {
+    $user = User::factory()->create();
+    $summary = PdfSummary::query()->create([
+        'user_id' => $user->id,
+        'filename' => 'quarterly-report.pdf',
+        'summary' => 'Summary text',
+        'summary_type' => 'standard',
+        'file_size' => 2048,
+    ]);
 
+    $user->notify(new \App\Notifications\SummaryCreated($summary));
 
+    $notification = $user->notifications()->first();
+
+    expect($notification->data)->toMatchArray([
+        'title' => 'Summary created',
+        'message' => 'Summary created. See your history.',
+        'summary_id' => $summary->id,
+        'filename' => 'quarterly-report.pdf',
+        'summary_type' => 'standard',
+    ]);
+});

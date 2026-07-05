@@ -6,6 +6,7 @@ namespace App\Http\Middleware;
 
 use App\Mappers\SubscriptionViewMapper;
 use App\Models\User;
+use App\Notifications\SummaryCreated as SummaryCreatedNotification;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -56,6 +57,46 @@ class HandleInertiaRequests extends Middleware
             'subscriptionData' => fn (): ?array => $user instanceof User
                 ? app(SubscriptionViewMapper::class)->sharedProps($user)
                 : null,
+            'notifications' => fn (): array => $user instanceof User
+                ? $this->notificationProps($user)
+                : $this->emptyNotificationProps(),
+        ];
+    }
+
+    /**
+     * @return array{unreadCount: int, unreadSummaryCount: int, unreadSummaryItems: array<int, array{id: string, summaryId: int}>}
+     */
+    private function notificationProps(User $user): array
+    {
+        $summaryNotifications = $user->unreadNotifications()
+            ->where('type', SummaryCreatedNotification::class)
+            ->get(['id', 'data'])
+            ->map(fn ($notification): array => [
+                'id' => (string) $notification->id,
+                'summaryId' => (int) data_get($notification->data, 'summary_id', 0),
+            ])
+            ->filter(fn (array $notification): bool => $notification['summaryId'] > 0)
+            ->values()
+            ->all();
+
+        return [
+            'unreadCount' => $user->unreadNotifications()->count(),
+            'unreadSummaryCount' => $user->unreadNotifications()
+                ->where('type', SummaryCreatedNotification::class)
+                ->count(),
+            'unreadSummaryItems' => $summaryNotifications,
+        ];
+    }
+
+    /**
+     * @return array{unreadCount: int, unreadSummaryCount: int, unreadSummaryItems: array<int, array{id: string, summaryId: int}>}
+     */
+    private function emptyNotificationProps(): array
+    {
+        return [
+            'unreadCount' => 0,
+            'unreadSummaryCount' => 0,
+            'unreadSummaryItems' => [],
         ];
     }
 }

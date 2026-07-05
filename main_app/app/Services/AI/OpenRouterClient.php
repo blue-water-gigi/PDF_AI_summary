@@ -40,7 +40,7 @@ class OpenRouterClient implements AiChatClientInterface
     {
         $this->apiKeyCheck();
 
-        $request = Http::timeout(60)->withHeaders([
+        $request = Http::timeout(120)->withHeaders([
             'Authorization' => 'Bearer ' . $this->apiKey,
             'HTTP-Reffer' => $this->appUrl,
             'X-OpenRouter-Title' => $this->appName,

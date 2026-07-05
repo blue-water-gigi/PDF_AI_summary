@@ -3,11 +3,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
+import { formatNumericDateTime, formatPaginationLabel, formatShortDate, formatSummaryType } from '@/lib/formatters';
+import { markNotificationAsRead } from '@/lib/notifications';
 import { cn } from '@/lib/utils';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem, type NotificationSummaryItem, type SharedData } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { CheckCircleIcon, CopyIcon, FileTextIcon, HistoryIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -53,43 +55,6 @@ interface HistoryProps {
     summaries: PaginatedSummaries;
 }
 
-function formatDate(date: string | null | undefined): string {
-    if (!date) {
-        return 'Not set';
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(new Date(date));
-}
-
-function formatFileSize(size: number | null | undefined): string {
-    if (!size) {
-        return 'Not set';
-    }
-
-    if (size < 1024 * 1024) {
-        return `${Math.max(1, Math.round(size / 1024))} KB`;
-    }
-
-    return `${(size / 1024 / 1024).toFixed(1)} MB`;
-}
-
-function formatSummaryType(type: string): string {
-    return type
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-}
-
-function formatPaginationLabel(label: string): string {
-    return label.replace(/&laquo;\s*/g, '').replace(/\s*&raquo;/g, '').trim();
-}
-
 function normalizeSummary(summary: SummaryPayload | null | undefined): string {
     if (!summary) {
         return '';
@@ -106,17 +71,9 @@ function normalizeSummary(summary: SummaryPayload | null | undefined): string {
     return JSON.stringify(summary, null, 2);
 }
 
-function truncateSummary(summary: string): string {
-    const plainText = summary
-        .replace(/^#{1,6}\s+/gm, '')
-        .replace(/\*\*/g, '')
-        .replace(/`/g, '')
-        .trim();
-
-    return plainText.length > 180 ? `${plainText.slice(0, 180)}...` : plainText;
-}
-
 export default function DashboardHistory({ summaries }: HistoryProps) {
+    const page = usePage<SharedData>();
+    const sharedUnreadSummaryItems = page.props.notifications?.unreadSummaryItems;
     const normalizedSummaries = useMemo(
         () =>
             summaries.data.map((summary) => ({
@@ -127,10 +84,52 @@ export default function DashboardHistory({ summaries }: HistoryProps) {
     );
     const [selectedId, setSelectedId] = useState<number | null>(normalizedSummaries[0]?.id ?? null);
     const [copied, setCopied] = useState(false);
+    const [unreadSummaryItems, setUnreadSummaryItems] = useState<NotificationSummaryItem[]>(sharedUnreadSummaryItems ?? []);
     const selectedSummary = useMemo(
         () => normalizedSummaries.find((summary) => summary.id === selectedId) ?? normalizedSummaries[0] ?? null,
         [selectedId, normalizedSummaries],
     );
+
+    useEffect(() => {
+        setUnreadSummaryItems(sharedUnreadSummaryItems ?? []);
+    }, [sharedUnreadSummaryItems]);
+
+    useEffect(() => {
+        if (!selectedSummary) {
+            return;
+        }
+        const unreadNotification = unreadSummaryItems.find((notification) => notification.summaryId === selectedSummary.id);
+        if (unreadNotification) {
+            void markSummaryNotificationAsViewed(unreadNotification);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSummary?.id, unreadSummaryItems]);
+
+    const unreadNotificationForSummary = (summaryId: number): NotificationSummaryItem | undefined => {
+        return unreadSummaryItems.find((notification) => notification.summaryId === summaryId);
+    };
+
+    const markSummaryNotificationAsViewed = async (notification: NotificationSummaryItem) => {
+        setUnreadSummaryItems((current) => current.filter((item) => item.id !== notification.id));
+
+        try {
+            await markNotificationAsRead(notification.id);
+            router.reload({ only: ['notifications'], preserveScroll: true });
+        } catch {
+            setUnreadSummaryItems((current) => (current.some((item) => item.id === notification.id) ? current : [...current, notification]));
+        }
+    };
+
+    const openSummary = (summary: (typeof normalizedSummaries)[number]) => {
+        setSelectedId(summary.id);
+        setCopied(false);
+
+        const unreadNotification = unreadNotificationForSummary(summary.id);
+
+        if (unreadNotification) {
+            void markSummaryNotificationAsViewed(unreadNotification);
+        }
+    };
 
     const copySummary = async () => {
         if (!selectedSummary?.summary) {
@@ -174,46 +173,52 @@ export default function DashboardHistory({ summaries }: HistoryProps) {
                 </div>
 
                 {normalizedSummaries.length > 0 ? (
-                    <div className="grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
+                    <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
                         <Card className="border-sidebar-border/70 dark:border-sidebar-border">
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-base">Documents</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-3">
-                                {normalizedSummaries.map((summary) => (
-                                    <button
-                                        key={summary.id}
-                                        type="button"
-                                        onClick={() => {
-                                            setSelectedId(summary.id);
-                                            setCopied(false);
-                                        }}
-                                        className={cn(
-                                            'w-full rounded-lg border p-4 text-left transition-colors',
-                                            selectedSummary?.id === summary.id
-                                                ? 'border-primary bg-primary/5'
-                                                : 'border-sidebar-border/70 hover:bg-accent/40 dark:border-sidebar-border',
-                                        )}
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <div className="flex items-center gap-2 font-medium">
-                                                    <FileTextIcon className="h-4 w-4 shrink-0" />
-                                                    <span className="truncate">{summary.filename}</span>
+                            <CardContent className="space-y-2">
+                                {normalizedSummaries.map((summary) => {
+                                    const isNew = Boolean(unreadNotificationForSummary(summary.id));
+
+                                    return (
+                                        <button
+                                            key={summary.id}
+                                            type="button"
+                                            onClick={() => openSummary(summary)}
+                                            className={cn(
+                                                'w-full rounded-lg border p-3 text-left transition-colors',
+                                                selectedSummary?.id === summary.id
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-sidebar-border/70 hover:bg-accent/40 dark:border-sidebar-border',
+                                            )}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className="bg-secondary relative mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+                                                    <FileTextIcon className="h-4 w-4" />
+                                                    {isNew ? <span className="bg-primary absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full" /> : null}
                                                 </div>
-                                                <p className="text-muted-foreground mt-2 line-clamp-3 text-sm">{truncateSummary(summary.summary)}</p>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="truncate text-sm font-medium">{summary.filename}</div>
+                                                        {isNew ? (
+                                                            <Badge variant="secondary" className="h-5 px-1.5 text-[11px]">
+                                                                New
+                                                            </Badge>
+                                                        ) : null}
+                                                    </div>
+                                                    <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">
+                                                        <Badge variant="outline" className="h-5 px-1.5 text-[11px]">
+                                                            {formatSummaryType(summary.summary_type)}
+                                                        </Badge>
+                                                        <span>{formatShortDate(summary.created_at)}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <Badge variant="outline" className="shrink-0">
-                                                #{summary.id}
-                                            </Badge>
-                                        </div>
-                                        <div className="text-muted-foreground mt-3 flex flex-wrap gap-2 text-xs">
-                                            <span>{formatSummaryType(summary.summary_type)}</span>
-                                            <span>{formatFileSize(summary.file_size)}</span>
-                                            <span>{formatDate(summary.created_at)}</span>
-                                        </div>
-                                    </button>
-                                ))}
+                                        </button>
+                                    );
+                                })}
                             </CardContent>
                         </Card>
 
@@ -221,12 +226,17 @@ export default function DashboardHistory({ summaries }: HistoryProps) {
                             <CardHeader className="pb-3">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div className="min-w-0">
-                                        <CardTitle className="truncate text-base">{selectedSummary?.filename}</CardTitle>
-                                        <div className="text-muted-foreground mt-2 flex flex-wrap gap-2 text-xs">
+                                        <div className="flex items-center gap-2">
+                                            <CardTitle className="truncate text-base">{selectedSummary?.filename}</CardTitle>
+                                            {selectedSummary && unreadNotificationForSummary(selectedSummary.id) ? (
+                                                <Badge variant="secondary" className="h-5 px-1.5 text-[11px]">
+                                                    New
+                                                </Badge>
+                                            ) : null}
+                                        </div>
+                                        <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-xs">
                                             <Badge variant="secondary">{formatSummaryType(selectedSummary?.summary_type ?? '')}</Badge>
-                                            <span>Created: {formatDate(selectedSummary?.created_at)}</span>
-                                            <span>Updated: {formatDate(selectedSummary?.updated_at)}</span>
-                                            <span>Size: {formatFileSize(selectedSummary?.file_size)}</span>
+                                            <span>{formatNumericDateTime(selectedSummary?.created_at)}</span>
                                         </div>
                                     </div>
                                     <Button variant="outline" size="sm" onClick={copySummary}>
