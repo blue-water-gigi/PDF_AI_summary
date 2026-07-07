@@ -13,7 +13,7 @@ class LimitReached extends Notification
     /**
      * Create a new notification instance.
      */
-    public function __construct(private readonly Subscription $subscription)
+    public function __construct(private readonly ?Subscription $subscription)
     {
         //
     }

@@ -4,7 +4,6 @@ namespace App\Services\Summarization;
 
 use App\Contracts\AI\AiChatClientInterface;
 use App\DTO\SummaryResult;
-use App\Events\LimitReached;
 use App\Events\SummaryCreated;
 use App\Exceptions\Summarizer\PdfSummarizerException;
 use App\Exceptions\Summarizer\UsageAvailabilityException;
@@ -41,7 +40,6 @@ readonly class PdfSummarizerService
     public function summarize(User $user, UploadedFile $file, string $summaryType = 'standard'): SummaryResult
     {
         if (!$user->canSummarizePdf()) {
-            LimitReached::dispatch($user, $user->subscription);
             throw new UsageAvailabilityException('User cant summarize pdf.');
         }
 

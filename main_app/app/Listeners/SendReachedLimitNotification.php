@@ -21,6 +21,6 @@ class SendReachedLimitNotification implements ShouldQueueAfterCommit
      */
     public function handle(LimitReached $event): void
     {
-        $event->user->notify(new LimitReachedNotification($event->subscription));
+        $event->user->notify(new LimitReachedNotification($event->subscription ?? null));
     }
 }

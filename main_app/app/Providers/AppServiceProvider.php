@@ -8,6 +8,7 @@ use App\Contracts\WebhookHandler;
 use App\Handlers\HandlerDelegator;
 use App\Handlers\StripeWebhookHandler;
 use App\Handlers\YoomoneyWebhookHandler;
+use App\Models\User;
 use App\Services\Payment\PaymentGatewayFactory;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
@@ -40,6 +41,5 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-
     }
 }

@@ -63,7 +63,7 @@ class User extends Authenticatable
     #[Override]
     protected static function booted(): void
     {
-        static::creating(function ($user) {
+        static::creating(function (User $user) {
             if (!$user->plan_id) {
                 $basicPlan = once(fn() => Plan::where('slug', 'basic')->first());
                 if ($basicPlan) {
@@ -111,6 +111,11 @@ class User extends Authenticatable
         }
 
         return $this->pdf_count < $this->plan->pdf_limit;
+    }
+
+    public function isLimitReached(): bool
+    {
+        return $this->pdf_count === $this->plan->pdf_limit;
     }
 
     public function isAdmin(): bool

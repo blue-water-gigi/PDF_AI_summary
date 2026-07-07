@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\LimitReached;
 use App\Exceptions\Summarizer\PdfSummarizerException;
 use App\Exceptions\Summarizer\UsageAvailabilityException;
 use App\Http\Requests\Summarization\SummarizePdfRequest;
@@ -27,11 +28,17 @@ class PdfController extends Controller
      */
     public function summarize(SummarizePdfRequest $request): Response
     {
+        $user = Auth::user();
+
         $result = $this->summarizer->summarize(
-            $request->user(),
+            $user,
             $request->file('pdf'),
             $request->input('summary_type', 'standard')
         );
+
+        if ($user->isLimitReached()) {
+            LimitReached::dispatch($user, $user->subscription);
+        }
 
         return response()->json(
             $result->toArray(),
